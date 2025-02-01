@@ -1,13 +1,14 @@
 const productController = require('../controllers/products.Controller');
 const prodcustRoute = require('express').Router();
 const { authenticate, authorize } = require('../middleware/auth');
+const upload = require('../middleware/multer');
 
 /**
  * @swagger
  * /product:
  *   get:
  *     summary: Retrieve a product or a list of products
- *     description: Fetch all the products available in the store or a specific product by its ID if the 'id' query parameter is provided. Filters by product name and price range are also supported. Pagination is available with 'limit' and 'offset' query parameters.
+ *     description: Fetch all the products available in the store or a specific product by its ID if the 'id' query parameter is provided. Filters by product name, price range, and category ID are also supported. Pagination is available with 'limit' and 'offset' query parameters.
  *     tags:
  *       - Products
  *     parameters:
@@ -40,6 +41,13 @@ const { authenticate, authorize } = require('../middleware/auth');
  *           type: number
  *           format: float
  *           example: 500.00
+ *       - in: query
+ *         name: categoryId
+ *         required: false
+ *         description: The category ID to filter products by.
+ *         schema:
+ *           type: integer
+ *           example: 2
  *       - in: query
  *         name: offset
  *         required: false
@@ -151,6 +159,7 @@ const { authenticate, authorize } = require('../middleware/auth');
  *                   type: string
  *                   example: "Internal Server Error"
  */
+
 
 prodcustRoute.get('/', productController.getProducts);
 
@@ -272,7 +281,16 @@ prodcustRoute.get('/', productController.getProducts);
  *                   example: "Internal Server Error"
  */
 
-prodcustRoute.post('/', authenticate, authorize('admin'), productController.createProduct);
+prodcustRoute.post('/',
+    authenticate,
+    authorize('admin'),
+    upload.fields([
+        { name: 'images', maxCount: 5 },
+        { name: 'colors[0][images]', maxCount: 5 },
+        { name: 'colors[1][images]', maxCount: 5 },
+    ]),
+    productController.createProduct
+);
 
 /**
  * @swagger
@@ -793,5 +811,67 @@ prodcustRoute.get('/similar-products/:productId', productController.getSimilarPr
  */
 
 prodcustRoute.post('/similar-products', authenticate, authorize('admin'), productController.addSimilarProducts);
+
+/**
+ * @swagger
+ * /product/{id}/status:
+ *   patch:
+ *     summary: Update the status of a product
+ *     description: Update the status of a specific product by its ID.
+ *     tags:
+ *       - Products
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the product to update
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 example: "active"
+ *     responses:
+ *       200:
+ *         description: Product status updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Product status updated successfully
+ *       404:
+ *         description: Product not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Product not found
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Error message
+ */
+
+prodcustRoute.patch('/status', productController.patchProductStatus);
+prodcustRoute.delete('/remove/:productId/:discountTierId', productController.deleteDiscountTiers);
+prodcustRoute.get('/dicounted-products/:productId', productController.getDiscount);
 
 module.exports = prodcustRoute;

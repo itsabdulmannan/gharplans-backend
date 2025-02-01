@@ -6,7 +6,8 @@ require('dotenv').config();
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    const name = process.env.ADMIN_NAME;
+    const firstName = process.env.ADMIN_NAME;
+    const lastName = process.env.ADMIN_NAME;
     const email = process.env.ADMIN_EMAIL;
     const password = process.env.ADMIN_PASSWORD;
     try {
@@ -26,7 +27,8 @@ module.exports = {
 
       await queryInterface.bulkInsert('users', [
         {
-          name,
+          firstName,
+          lastName,
           email,
           password: hash,
           role: 'admin',

@@ -28,7 +28,7 @@ const Order = sequelize.define('order', {
         allowNull: false
     },
     status: {
-        type: DataTypes.ENUM('pending', 'completed', 'cancelled'),
+        type: DataTypes.ENUM('pending', 'approved', 'rejected'),
         allowNull: false,
         defaultValue: 'pending'
     },
@@ -52,6 +52,11 @@ const Order = sequelize.define('order', {
     },
     destinationCity: {
         type: DataTypes.STRING,
+        allowNull: true
+    },
+    paymentStatus: {
+        type: DataTypes.ENUM('pending', 'approved', 'rejected'),
+        defaultValue: 'pending',
         allowNull: true
     }
 }, {

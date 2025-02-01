@@ -39,6 +39,11 @@ const utmLink = sequelize.define('utmLink', {
         type: DataTypes.INTEGER,
         allowNull: true
     },
+    status: {
+        type: DataTypes.BOOLEAN,
+        allowNull: true,
+        defaultValue: true
+    }
 }, {
     tableName: 'utmLink',
     timestamps: true,

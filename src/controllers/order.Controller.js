@@ -4,6 +4,7 @@ const sequelize = require('../config/database');
 const cart = require('../models/cart.Model');
 const paymentRecords = require('../models/paymentRecords.Model');
 const { sendMail } = require('../config/mailer');
+const { Op } = require('sequelize');
 
 const orderController = {
     generateOrderId: () => {
@@ -57,7 +58,7 @@ const orderController = {
         }
     },
     getOrders: async (req, res) => {
-        const { orderId, limit, offset } = req.query;
+        const { orderId, status, name, limit, offset } = req.query;
 
         const pageLimit = parseInt(limit) || 10;
         const pageOffset = parseInt(offset) || 0;
@@ -69,40 +70,65 @@ const orderController = {
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['id', 'firstName', 'lastName', 'email'],
+                    attributes: ['id', 'firstName', 'lastName', 'email', 'contactNo', 'address', 'city', 'profileImage'],
+                    where: {},
                 }
             ]
         };
 
         if (orderId) {
-            queryOptions.where = { orderId };
+            queryOptions.where = { ...queryOptions.where, orderId };
+        }
+        if (status) {
+            queryOptions.where = { ...queryOptions.where, status };
+        }
+        if (name) {
+            queryOptions.include[0].where = {
+                ...queryOptions.include[0].where,
+                [Op.or]: [
+                    { firstName: { [Op.like]: `%${name}%` } },
+                    { lastName: { [Op.like]: `%${name}%` } }
+                ]
+            };
         }
 
         try {
-            const ordersData = orderId
-                ? await order.findOne(queryOptions)
-                : await order.findAll(queryOptions);
+            if (orderId) {
+                const ordersData = await order.findOne(queryOptions);
+                if (ordersData) {
+                    const responseData = { ...ordersData.toJSON() };
+                    delete responseData.userId;
+                    res.status(200).json({ status: true, orderData: responseData });
+                } else {
+                    res.status(404).json({ status: false, message: "Order not found." });
+                }
+            } else {
+                const { count, rows: ordersData } = await order.findAndCountAll(queryOptions);
+                if (ordersData.length > 0) {
+                    const responseData = ordersData.map(order => ({
+                        ...order.toJSON(),
+                        totalItemsPurchased: order.productInfo.reduce((total, product) => total + product.quantity, 0),
+                    }));
 
-            if (ordersData) {
-                const responseData = Array.isArray(ordersData)
-                    ? ordersData.map(order => ({ ...order.toJSON() }))
-                    : { ...ordersData.toJSON() };
+                    const userItemsCount = responseData.reduce((acc, order) => {
+                        const userId = order.user.id;
+                        acc[userId] = (acc[userId] || 0) + order.totalItemsPurchased;
+                        return acc;
+                    }, {});
 
-                if (!orderId) {
                     res.status(200).json({
                         status: true,
                         ordersData: responseData,
+                        totalItemsByUser: userItemsCount,
+                        // totalItems: count,
                         pagination: {
                             limit: pageLimit,
                             offset: pageOffset
                         }
                     });
                 } else {
-                    delete responseData.userId;
-                    res.status(200).json({ status: true, orderData: responseData });
+                    res.status(404).json({ status: false, message: "No orders found." });
                 }
-            } else {
-                res.status(404).json({ status: false, message: orderId ? "Order not found." : "No orders found." });
             }
         } catch (error) {
             console.error("Error in getOrders: ", error);
@@ -159,26 +185,33 @@ const orderController = {
     verifyPayment: async (req, res) => {
         const { orderId } = req.params;
         const { paymentStatus } = req.body;
-
         try {
             const orderData = await order.findOne({ where: { orderId } });
+            console.log(orderId, paymentStatus);
             if (orderData) {
-                await order.update({ paymentStatus }, { where: { orderId } });
-                if (paymentStatus === 'confirmed') {
-                    const user = await User.findOne({ where: { id: orderData.userId } });
+                if (['approved', 'rejected'].includes(paymentStatus)) {
+                    await order.update({ paymentStatus }, { where: { orderId } });
+                    await paymentRecords.update({ paymentStatus }, { where: { orderId } });
 
-                    if (user) {
-                        const mailOptions = {
-                            from: process.env.SMTP_MAIL,
-                            to: user.email,
-                            subject: `Payment Successful - Order ID: ${orderId}`,
-                            text: `Dear ${user.name},\n\nYour payment for Order ID: ${orderId} has been successfully verified. Your order is now complete.\n\nThank you for shopping with us!`,
-                        };
+                    if (paymentStatus === 'approved') {
+                        const user = await User.findOne({ where: { id: orderData.userId } });
 
-                        await sendMail(mailOptions);
+                        if (user) {
+                            const mailOptions = {
+                                from: process.env.SMTP_MAIL,
+                                to: user.email,
+                                subject: `Payment Successful - Order ID: ${orderId}`,
+                                text: `Dear ${user.name},\n\nYour payment for Order ID: ${orderId} has been successfully verified. Your order is now complete.\n\nThank you for shopping with us!`,
+                            };
+
+                            await sendMail(mailOptions);
+                        }
                     }
+
+                    res.status(200).json({ status: true, message: "Payment status updated successfully." });
+                } else {
+                    res.status(400).json({ status: false, message: "Invalid payment status." });
                 }
-                res.status(200).json({ status: true, message: "Payment status updated successfully." });
             } else {
                 res.status(404).json({ status: false, message: "Order not found." });
             }
@@ -186,7 +219,53 @@ const orderController = {
             console.error("Error in verifyPayment: ", error);
             res.status(500).json({ status: false, message: "Internal server error." });
         }
-    }
+    },
+    getAllPaymentScreenshots: async (req, res) => {
+        try {
+            const { pending, approved, rejected } = req.query;
+            console.log(req.query);
+
+            const conditions = [];
+
+            if (pending !== undefined) conditions.push({ paymentStatus: 'pending' });
+            if (approved !== undefined) conditions.push({ paymentStatus: 'approved' });
+            if (rejected !== undefined) conditions.push({ paymentStatus: 'rejected' });
+
+            if (conditions.length > 0) {
+                const paymentScreenshots = await paymentRecords.findAll({
+                    where: {
+                        [Op.or]: conditions
+                    }
+                });
+
+                const responseData = {
+                    pendingPaymentScreenshots: [],
+                    approvedPaymentScreenshots: [],
+                    rejectedPaymentScreenshots: []
+                };
+
+                // Filter the data based on payment status and populate responseData
+                if (pending !== undefined) {
+                    responseData.pendingPaymentScreenshots = paymentScreenshots.filter(payment => payment.paymentStatus === 'pending');
+                }
+
+                if (approved !== undefined) {
+                    responseData.approvedPaymentScreenshots = paymentScreenshots.filter(payment => payment.paymentStatus === 'approved');
+                }
+
+                if (rejected !== undefined) {
+                    responseData.rejectedPaymentScreenshots = paymentScreenshots.filter(payment => payment.paymentStatus === 'rejected');
+                }
+
+                return res.status(200).json({ status: true, ...responseData });
+            }
+
+            res.status(400).json({ status: false, message: "No valid status filter provided in the query." });
+        } catch (error) {
+            console.error("Error in getAllPaymentScreenshots: ", error);
+            res.status(500).json({ status: false, message: "Internal server error." });
+        }
+    },
 };
 
 module.exports = orderController;

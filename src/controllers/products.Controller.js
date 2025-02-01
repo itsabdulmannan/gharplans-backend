@@ -5,24 +5,50 @@ const Review = require('../models/review.Model');
 const sequelize = require('../config/database');
 const discountedProducts = require('../models/discountedProducts.Model');
 const similerProductModel = require('../models/similarProducts.Model');
+const ProductColors = require('../models/productColor.Model');
 
 const productController = {
     getProducts: async (req, res) => {
         try {
-            const { id, name, minPrice, maxPrice, offset, limit } = req.query;
+            const { id, name, minPrice, maxPrice, offset, limit, categoryId } = req.query;
 
-            // Pagination
             const pageOffset = parseInt(offset) || 0;
             const pageLimit = parseInt(limit) || 10;
+
+            const whereConditions = {};
+            if (categoryId) {
+                whereConditions.categoryId = categoryId;
+            }
+            if (name) {
+                whereConditions.name = { [Op.like]: `%${name}%` };
+            }
+            if (minPrice) {
+                whereConditions.price = { [Op.gte]: parseFloat(minPrice) };
+            }
+            if (maxPrice) {
+                whereConditions.price = {
+                    ...whereConditions.price,
+                    [Op.lte]: parseFloat(maxPrice),
+                };
+            }
 
             if (id) {
                 const product = await Products.findOne({
                     where: { id },
-                    include: {
-                        model: Category,
-                        attributes: ['id', 'name'],
-                    },
+                    include: [
+                        {
+                            model: Category,
+                            attributes: ['id', 'name'],
+                        },
+                        {
+                            model: ProductColors,
+                            as: 'colors',
+                            attributes: ['id', 'color', 'image'],
+                        },
+                    ],
                 });
+
+
 
                 if (!product) {
                     return res.status(404).json({ error: "Product not found" });
@@ -89,34 +115,24 @@ const productController = {
                 return res.status(200).json(result);
             }
 
-            // Pagination and filtering for product listing
-            const whereConditions = {};
-            if (name) {
-                whereConditions.name = { [Op.like]: `%${name}%` };
-            }
-            if (minPrice) {
-                whereConditions.price = { [Op.gte]: parseFloat(minPrice) };
-            }
-            if (maxPrice) {
-                whereConditions.price = {
-                    ...whereConditions.price,
-                    [Op.lte]: parseFloat(maxPrice),
-                };
-            }
-
             const { count, rows: products } = await Products.findAndCountAll({
                 where: whereConditions,
-                order: [
-                    ['homeScreen', 'DESC'],
-                    ['createdAt', 'DESC'],
+                include: [
+                    {
+                        model: Category,
+                        attributes: ['id', 'name'],
+                    },
+                    {
+                        model: ProductColors,
+                        as: 'colors', // Use the correct alias
+                        attributes: ['id', 'color', 'image'], // Only include valid columns
+                    },
                 ],
-                include: {
-                    model: Category,
-                    attributes: ['id', 'name'],
-                },
                 offset: pageOffset,
                 limit: pageLimit,
             });
+
+
 
             const host = req.protocol + '://' + req.get('host');
 
@@ -201,14 +217,79 @@ const productController = {
             res.status(500).json({ error: error.message });
         }
     },
-
     createProduct: async (req, res) => {
         try {
-            console.log(req.body)
-            const product = await Products.create(req.body);
-            res.status(201).json(product);
+            const {
+                name,
+                price,
+                categoryId,
+                description,
+                shortDescription,
+                additionalInformation,
+                status,
+                weight,
+                options,
+                colors
+            } = req.body;
+
+            console.log(req.body);
+
+            if (!name || !price || !categoryId || !description) {
+                return res.status(400).json({
+                    error: 'Name, price, category, and description are required'
+                });
+            }
+
+            const product = await Products.create({
+                name,
+                price: parseFloat(price),
+                categoryId,
+                description,
+                shortDescription: shortDescription || '',
+                addiotionalInformation: additionalInformation || '',
+                status: status === 'true',
+                weight: weight || null,
+                options: Array.isArray(options) ? options : []
+            });
+
+            if (req.files && Array.isArray(colors)) {
+                const colorPromises = colors.map(async (color, index) => {
+                    const colorFiles = req.files[`colors[${index}][images]`] || [];
+
+                    if (colorFiles.length === 0) {
+                        return;
+                    }
+
+                    const imageUrls = colorFiles.map(file => `/image/${file.filename}`);
+
+                    return ProductColors.create({
+                        productId: product.id,
+                        color: color.name,
+                        image: imageUrls
+                    });
+                });
+
+                await Promise.all(colorPromises);
+            }
+
+            const completeProduct = await Products.findByPk(product.id, {
+                include: [{
+                    model: ProductColors,
+                    as: 'colors'
+                }]
+            });
+
+            res.status(201).json({
+                message: 'Product created successfully',
+                product: completeProduct
+            });
+
         } catch (error) {
-            res.status(500).json({ error: error.message });
+            console.error('Error creating product:', error);
+            res.status(500).json({
+                error: 'Failed to create product',
+                details: error.message
+            });
         }
     },
     updateProduct: async (req, res) => {
@@ -240,7 +321,6 @@ const productController = {
     changeOrder: async (req, res) => {
         try {
             const { productId, homePage } = req.body;
-            console.log(productId, homePage);
 
             const product = await Products.findByPk(productId);
             if (!product) {
@@ -314,9 +394,65 @@ const productController = {
             return res.status(500).json({ error: error.message });
         }
     },
+    getDiscount: async (req, res) => {
+        try {
+            const { productId } = req.params;
+            console.log(productId);
+
+            const product = await Products.findByPk(productId);
+
+            if (!product) {
+                return res.status(404).json({ error: 'Product not found' });
+            }
+
+            const discounts = await discountedProducts.findAll({ where: { productId } });
+
+            if (!discounts || discounts.length === 0) {
+                return res.status(200).json({
+                    status: true,
+                    message: 'No discount available',
+                    data: [],
+                });
+            }
+
+            return res.status(200).json({
+                status: true,
+                message: 'Discounts fetched successfully',
+                data: discounts,
+            });
+        } catch (error) {
+            console.error("Error while fetching discounts:", error);
+            return res.status(500).json({ error: error.message });
+        }
+    },
+    deleteDiscountTiers: async (req, res) => {
+        try {
+            const { productId, discountTierId } = req.params;
+
+            const product = await Products.findByPk(productId);
+            if (!product) {
+                return res.status(404).json({ error: 'Product not found' });
+            }
+
+            const deletedRowCount = await discountedProducts.destroy({
+                where: { productId, id: discountTierId }
+            });
+
+            if (deletedRowCount === 0) {
+                return res.status(404).json({ error: 'Discount tier not found' });
+            }
+
+            return res.status(200).json({
+                status: true,
+                message: 'Discount tier deleted successfully',
+            });
+        } catch (error) {
+            console.error("Error while deleting discount tier:", error);
+            return res.status(500).json({ error: error.message });
+        }
+    },
     addSimilarProducts: async (req, res) => {
         try {
-            console.log("first")
             const { productId, similarProducts } = req.body;
 
             const product = await Products.findByPk(productId);
@@ -394,6 +530,20 @@ const productController = {
             });
         } catch (error) {
             console.error("Error while fetching similar products:", error);
+            return res.status(500).json({ error: error.message });
+        }
+    },
+    patchProductStatus: async (req, res) => {
+        try {
+            const { id, status } = req.body;
+            const product = await Products.findByPk(id);
+            if (!product) {
+                return res.status(404).json({ error: 'Product not found' });
+            }
+            await product.update({ status });
+            return res.status(200).json({ message: 'Product status updated successfully' });
+        } catch (error) {
+            console.error("Error while updating product status:", error);
             return res.status(500).json({ error: error.message });
         }
     }

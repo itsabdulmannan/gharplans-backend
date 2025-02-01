@@ -7,7 +7,7 @@ const { authenticate, authorize } = require('../middleware/auth');
  * /quotation:
  *   post:
  *     summary: Generate a quotation for multiple products.
- *     description: Returns a PDF with the quotation details based on the products and quantities provided.
+ *     description: Returns a PDF with the quotation details based on the products, billTo, billFrom, and quotation information.
  *     tags:
  *       - Quotation
  *     requestBody:
@@ -17,6 +17,54 @@ const { authenticate, authorize } = require('../middleware/auth');
  *           schema:
  *             type: object
  *             properties:
+ *               quotation:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     invoiceNo:
+ *                       type: string
+ *                       description: Invoice number for the quotation.
+ *                       example: "INV-12345"
+ *                     date:
+ *                       type: string
+ *                       format: date
+ *                       description: Date of the quotation.
+ *                       example: "2024-02-01"
+ *               billFrom:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     billFromAddress:
+ *                       type: string
+ *                       description: Address of the sender.
+ *                       example: "123 Main St, City, Country"
+ *                     billFromPhone:
+ *                       type: string
+ *                       description: Phone number of the sender.
+ *                       example: "+1234567890"
+ *                     billFromEmail:
+ *                       type: string
+ *                       description: Email of the sender.
+ *                       example: "sender@example.com"
+ *               billTo:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     billToName:
+ *                       type: string
+ *                       description: Name of the recipient.
+ *                       example: "John Doe"
+ *                     BillToPhone:
+ *                       type: string
+ *                       description: Phone number of the recipient.
+ *                       example: "+0987654321"
+ *                     BillToAddress:
+ *                       type: string
+ *                       description: Address of the recipient.
+ *                       example: "456 Another St, City, Country"
  *               products:
  *                 type: array
  *                 items:
@@ -47,7 +95,7 @@ const { authenticate, authorize } = require('../middleware/auth');
  *               type: string
  *               format: binary
  *       400:
- *         description: Bad request - missing required fields such as product details (productId, quantity, color, and weight).
+ *         description: Bad request - missing required fields such as quotation details, billFrom, billTo, or product information.
  *         content:
  *           application/json:
  *             schema:
@@ -55,7 +103,7 @@ const { authenticate, authorize } = require('../middleware/auth');
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Product details are required"
+ *                   example: "Invoice number and date are required"
  *       404:
  *         description: Product not found with the provided productId.
  *         content:
@@ -78,6 +126,6 @@ const { authenticate, authorize } = require('../middleware/auth');
  *                   example: "Internal server error"
  */
 
-quotationRouter.post('/', authenticate, authorize('admin'), quotationController.getQuotation);
+quotationRouter.post('/', quotationController.getQuotation);
 
 module.exports = quotationRouter;

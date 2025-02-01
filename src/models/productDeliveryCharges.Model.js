@@ -11,7 +11,7 @@ const ProductsDeliveryCharge = sequelize.define('products_delivery_charge', {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    sourcerCityId: {
+    sourceCityId: {
         type: DataTypes.INTEGER,
         allowNull: false
     },

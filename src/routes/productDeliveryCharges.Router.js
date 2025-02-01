@@ -117,7 +117,7 @@ productDeliveryChargesRoute.get('/product', authenticate, productDeliveryCharges
  *                 type: integer
  *                 description: The ID of the product
  *                 example: 1
- *               sourcerCityId:
+ *               sourceCityId:
  *                 type: integer
  *                 description: The ID of the sourcer city
  *                 example: 101
@@ -146,7 +146,7 @@ productDeliveryChargesRoute.get('/product', authenticate, productDeliveryCharges
  *                   type: integer
  *                   description: The ID of the product
  *                   example: 1
- *                 sourcerCityId:
+ *                 sourceCityId:
  *                   type: integer
  *                   description: The ID of the sourcer city
  *                   example: 101
@@ -199,7 +199,7 @@ productDeliveryChargesRoute.post('/product', authenticate, authorize('admin'), p
  *                 format: float
  *               productId:
  *                 type: integer
- *               sourcerCityId:
+ *               sourceCityId:
  *                 type: integer
  *               destinationCityId:
  *                 type: integer

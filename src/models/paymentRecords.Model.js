@@ -16,7 +16,7 @@ const PaymentRecords = sequelize.define('paymentRecords', {
         allowNull: false
     },
     paymentStatus: {
-        type: DataTypes.ENUM('pending', 'completed', 'cancelled'),
+        type: DataTypes.ENUM('pending', 'approved', 'rejected'),
         allowNull: false
     },
     screenShot: {

@@ -6,13 +6,15 @@ const productDeliveryChargesController = {
 
     addProductDeliveryCharges: async (req, res) => {
         try {
-            const { productId, sourcerCityId, destinationCityId, deliveryCharge } = req.body;
-            console.log(req.body);
+            const { productId, sourceCityId, destinationCityId, price } = req.body;
+            console.log("Destrucutred Data", "Prodcut Id", productId, "Source City Id", sourceCityId, "Destination City Id", destinationCityId, "Price", price);
+            console.log("Request Body:", req.body);
             const checkProduct = await product.findByPk(productId);
             if (!checkProduct) {
                 return res.status(404).json({ message: `Product with id ${productId} not found.` });
             }
-            const productDeliveryCharges = await productsdeliverycharges.create({ productId, sourcerCityId, destinationCityId, deliveryCharge });
+            console.log(sourceCityId, destinationCityId);
+            const productDeliveryCharges = await productsdeliverycharges.create({ productId, sourceCityId, destinationCityId, deliveryCharge: price });
             res.status(201).json(productDeliveryCharges);
         } catch (error) {
             console.error("Error adding product delivery charges:", error);
@@ -78,20 +80,20 @@ const productDeliveryChargesController = {
     updateProductDeliveryCharges: async (req, res) => {
         try {
             const { id } = req.params;
-            const { charge, productId, sourcerCityId, destinationCityId } = req.body;
+            const { price, productId, sourceCityId, destinationCityId } = req.body;
 
-            if (!charge || !productId || !sourcerCityId || !destinationCityId) {
-                return res.status(400).json({ message: "Missing required fields: charge, productId, sourcerCityId, and destinationCityId are required." });
+            console.log("Request Body:", req.body);
+            if (!price || !productId || !sourceCityId || !destinationCityId) {
+                return res.status(400).json({ message: "Missing required fields: charge, productId, sourceCityId, and destinationCityId are required." });
             }
-
             const productDeliveryCharge = await productsdeliverycharges.findByPk(id);
             if (!productDeliveryCharge) {
                 return res.status(404).json({ message: `Product delivery charge with id ${id} not found.` });
             }
 
-            productDeliveryCharge.charge = charge;
+            productDeliveryCharge.deliveryCharge = price;
             productDeliveryCharge.productId = productId;
-            productDeliveryCharge.sourcerCityId = sourcerCityId;
+            productDeliveryCharge.sourceCityId = sourceCityId;
             productDeliveryCharge.destinationCityId = destinationCityId;
 
             await productDeliveryCharge.save();

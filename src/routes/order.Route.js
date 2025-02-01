@@ -84,7 +84,7 @@ orderRouter.post('/', authenticate, authorize('User'), orderController.addOrder)
  * @swagger
  * /orders:
  *   get:
- *     summary: Get orders by ID or all orders
+ *     summary: Get orders by ID, status, user name, or all orders
  *     tags: [Orders]
  *     parameters:
  *       - in: query
@@ -93,6 +93,18 @@ orderRouter.post('/', authenticate, authorize('User'), orderController.addOrder)
  *         schema:
  *           type: string
  *         description: Unique ID of the order (optional, to fetch a specific order)
+ *       - in: query
+ *         name: status
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Status of the order (optional, to filter by status)
+ *       - in: query
+ *         name: name
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Name of the user (optional, to filter by user name)
  *       - in: query
  *         name: limit
  *         required: false
@@ -117,8 +129,17 @@ orderRouter.post('/', authenticate, authorize('User'), orderController.addOrder)
  *               properties:
  *                 status:
  *                   type: boolean
- *                 orderData:
+ *                 ordersData:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 pagination:
  *                   type: object
+ *                   properties:
+ *                     limit:
+ *                       type: integer
+ *                     offset:
+ *                       type: integer
  *       404:
  *         description: Order not found
  *         content:
@@ -132,9 +153,18 @@ orderRouter.post('/', authenticate, authorize('User'), orderController.addOrder)
  *                   type: string
  *       500:
  *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
  */
 
-orderRouter.get('/', authenticate, authorize('admin', 'User'), orderController.getOrders);
+orderRouter.get('/', orderController.getOrders);
 
 /**
  * @swagger
@@ -316,5 +346,140 @@ orderRouter.post('/:orderId/upload-screenshot', authenticate, authorize('User'),
  */
 
 orderRouter.put('/:orderId/verify-payment', authenticate, authorize('admin'), orderController.verifyPayment);
+
+/**
+ * @swagger
+ * /orders/payment-screenshots:
+ *   get:
+ *     summary: Retrieve payment screenshots by status
+ *     description: Fetch payment screenshots based on their status (pending, approved, or rejected). Requires admin authorization.
+ *     tags:
+ *       - Orders
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: pending
+ *         schema:
+ *           type: boolean
+ *         description: Retrieve pending payment screenshots (true for enabling the filter).
+ *       - in: query
+ *         name: approved
+ *         schema:
+ *           type: boolean
+ *         description: Retrieve approved payment screenshots (true for enabling the filter).
+ *       - in: query
+ *         name: rejected
+ *         schema:
+ *           type: boolean
+ *         description: Retrieve rejected payment screenshots (true for enabling the filter).
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved payment screenshots.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: true
+ *                 pendingPaymentScreenshots:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       paymentStatus:
+ *                         type: string
+ *                         example: pending
+ *                       screenshotUrl:
+ *                         type: string
+ *                         example: "https://example.com/screenshot1.png"
+ *                 approvedPaymentScreenshots:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 2
+ *                       paymentStatus:
+ *                         type: string
+ *                         example: approved
+ *                       screenshotUrl:
+ *                         type: string
+ *                         example: "https://example.com/screenshot2.png"
+ *                 rejectedPaymentScreenshots:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 3
+ *                       paymentStatus:
+ *                         type: string
+ *                         example: rejected
+ *                       screenshotUrl:
+ *                         type: string
+ *                         example: "https://example.com/screenshot3.png"
+ *       400:
+ *         description: No valid status filter provided in the query.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "No valid status filter provided in the query."
+ *       401:
+ *         description: Unauthorized - Authentication required.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized."
+ *       403:
+ *         description: Forbidden - Admin access required.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Access denied."
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error."
+ */
+
+orderRouter.get('/payment-screenshots', authenticate, authorize('admin'), orderController.getAllPaymentScreenshots);
 
 module.exports = orderRouter;

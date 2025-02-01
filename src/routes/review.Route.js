@@ -59,6 +59,7 @@ const { authenticate, authorize } = require('../middleware/auth');
  *         description: Internal server error.
  */
 reviewRouter.post('/', authenticate, authorize('User'), reviewController.addReview);
+
 /**
  * @swagger
  * /reviews:
@@ -98,6 +99,18 @@ reviewRouter.post('/', authenticate, authorize('User'), reviewController.addRevi
  *           type: integer
  *           default: 10
  *         description: The number of records to return for pagination (default is 10).
+ *       - in: query
+ *         name: status
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: 
+ *             - pending
+ *             - approved
+ *             - rejected
+ *         description: |
+ *           Filter reviews by status. Can be one of the following:
+ *           'pending', 'approved', or 'rejected'.
  *     responses:
  *       200:
  *         description: Reviews fetched successfully.

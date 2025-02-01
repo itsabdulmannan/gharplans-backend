@@ -5,8 +5,10 @@ const { Op } = require('sequelize');
 const categoryController = {
     addCategory: async (req, res) => {
         try {
-            const { name, description, image, status } = req.body;
-            const category = await Category.create({ name, description, image, status });
+            console.log(req.body)
+            const { name, description, status } = req.body;
+            const imageUrl = `/images/${req.file.filename}`
+            const category = await Category.create({ name, description, image: imageUrl, status });
             res.status(201).json({ status: true, message: "Category added successfully.", category });
         } catch (error) {
             console.error('Error adding category:', error);
@@ -158,8 +160,10 @@ const categoryController = {
     },
     updateCategory: async (req, res) => {
         try {
+            console.log("first")
             const id = req.params.id;
             const { name, description, image, status } = req.body;
+            console.log(name, description, image, status, id)
             const category = await Category.findByPk(id);
             if (!category) {
                 res.status(404).json({ status: false, error: "Category not found" });
@@ -183,6 +187,20 @@ const categoryController = {
         } catch (error) {
             console.error(error);
             res.status(500).json({ status: false, error: "Internal Server Error" });
+        }
+    },
+    patchCaregoryStatus: async (req, res) => {
+        try {
+            const { id, status } = req.body
+            console.log(id, status, "Patch Function Calles")
+            const category = await Category.findByPk(id);
+            if (!category) {
+                return res.status(404).json({ status: false, error: "Category not found" });
+            }
+            await Category.update({ status }, { where: { id } });
+            return res.status(200).json({ status: true, message: "Category status updated successfully." });
+        } catch (error) {
+
         }
     }
 }

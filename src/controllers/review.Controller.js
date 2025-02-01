@@ -16,17 +16,20 @@ const reviewController = {
     },
     getReviews: async (req, res) => {
         try {
-            const { id, userId, productId, offset = 0, limit = 10 } = req.query;
+            const { id, userId, productId, status, offset = 0, limit = 10 } = req.query;
             let whereCondition = {};
+
+            if (status) whereCondition.status = status;
             if (id) whereCondition.id = id;
             if (userId) whereCondition.userId = userId;
             if (productId) whereCondition.productId = productId;
+
             const reviews = await reviewModel.findAll({
                 where: whereCondition,
                 attributes: ['id', 'rating', 'review', 'status', 'createdAt'],
                 include: [{
                     model: User,
-                    attributes: ['firstName', 'lastName', 'email']
+                    attributes: ['id', 'firstName', 'lastName', 'email']
                 },
                 {
                     model: Products,
@@ -72,6 +75,7 @@ const reviewController = {
     updateReview: async (req, res) => {
         try {
             const { reviewId, userId, status } = req.body;
+            console.log(reviewId, userId, status);
             if (!reviewId || !userId || !status) {
                 return res.status(400).json({ status: false, message: "Missing required fields." });
             }

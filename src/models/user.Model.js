@@ -44,9 +44,18 @@ const User = sequelize.define('user', {
         type: DataTypes.STRING,
         allowNull: true
     },
+    status: {
+        type: DataTypes.BOOLEAN,
+        allowNull: true,
+        defaultValue: true
+    },
     profileImage: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: true,
+        get() {
+            const rawValue = this.getDataValue('profileImage');
+            return rawValue ? `${process.env.BASE_URL}${rawValue}` : null;
+        }
     },
     isVerified: {
         type: DataTypes.BOOLEAN,

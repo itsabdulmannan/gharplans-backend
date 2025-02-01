@@ -3,6 +3,10 @@ const bcrypt = require('bcrypt');
 const { sendMail, transporter } = require('../config/mailer');
 const jwt = require('jsonwebtoken');
 const sequelize = require('../config/database');
+const { Op } = require('sequelize');
+const reviews = require('../models/review.Model');
+const Order = require('../models/order.Model');
+const Products = require('../models/product.Model');
 
 const generateOTP = () => {
     return Math.floor(1000 + Math.random() * 9000).toString();
@@ -10,7 +14,10 @@ const generateOTP = () => {
 const userController = {
 
     registerUser: async (req, res) => {
-        const { firstName, lastName, email, password, contactNo, address, city, profileImage, dob } = req.body;
+        const { firstName, lastName, email, password, contactNo, address, city, dob } = req.body;
+        const imgeUrl = req.file ? req.file.path : null;
+        console.log(req.body,imgeUrl)
+        console.log(req.file)
 
         const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
         if (!email || !emailRegex.test(email)) {
@@ -39,14 +46,16 @@ const userController = {
             const newUser = {
                 firstName,
                 lastName,
-                dob,
+                dateOfBirth: dob,
                 email,
                 password: hashedPassword,
                 role: 'User',
                 contactNo,
                 address,
                 city,
-                profileImage
+                profileImage: imgeUrl,
+                status: 'active',
+                isVerified: false
             };
 
             const createdUser = await User.create(newUser, { transaction });
@@ -83,7 +92,7 @@ const userController = {
         } catch (error) {
             console.error('Error registering user:', error);
             await transaction.rollback();
-            res.status(500).json({ status: false, error: 'Internal Server Error' });
+            res.status(500).json({ status: false, error: 'Internal Server Error', error: error.message });
         }
     },
     loginUser: async (req, res) => {
@@ -100,7 +109,7 @@ const userController = {
             if (!passwordMatch) {
                 return res.status(401).json({ error: 'Invalid password' });
             }
-            const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' });
+            const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET_KEY, { expiresIn: '10d' });
             res.status(200).json({ user, token });
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -189,7 +198,6 @@ const userController = {
     },
     resetPassword: async (req, res) => {
         const token = req.header('Authorization').replace('Bearer ', '');
-        console.log("Token from swagger", token)
         try {
             const user = await User.findOne({ where: { email: req.user.email } });
             if (!user) {
@@ -209,9 +217,7 @@ const userController = {
     updatePassword: async (req, res) => {
         try {
             const token = req.header('Authorization').replace('Bearer ', '');
-            console.log("Token from swagger", token)
             const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-            console.log(decoded.email, "decoded email")
             const user = await User.findOne({ where: { email: decoded.email } });
             if (!user) {
                 return res.status(404).json({ error: "User not found" });
@@ -228,6 +234,99 @@ const userController = {
         } catch (error) {
             console.error("Error while updating password", error);
             return res.status(500).json({ status: false, error: "Invalid or expired token" });
+        }
+    },
+    getUser: async (req, res) => {
+        try {
+            const user = req.user;
+            const userId = user.id;
+            const getUser = await User.findByPk(userId);
+            if (getUser) {
+                return res.status(200).json({ status: true, getUser });
+            }
+            return res.status(404).json({ status: false, message: "User not found" });
+        } catch (error) {
+            console.error("Error while getting user", error);
+            return res.status(500).json({ status: false, error: "Internal Server Error" });
+        }
+    },
+    getAllUsers: async (req, res) => {
+        try {
+            const { name, status } = req.query;
+            console.log(name, status);
+
+            const whereCondition = {};
+
+            if (name) {
+                whereCondition[Op.or] = [
+                    { firstName: { [Op.iLike]: `%${name}%` } },
+                    { lastName: { [Op.iLike]: `%${name}%` } }
+                ];
+            }
+
+            if (status) {
+                whereCondition.status = status;
+            }
+
+            const users = await User.findAll({
+                where: whereCondition,
+                attributes: {
+                    include: [
+                        [
+                            sequelize.literal(`(
+                                SELECT COUNT(*) FROM "review" WHERE "review"."userId" = "user"."id"
+                            )`),
+                            'totalReviews'
+                        ],
+                        [
+                            sequelize.literal(`(
+                                SELECT COUNT(*) FROM "order" WHERE "order"."userId" = "user"."id"
+                            )`),
+                            'totalOrders'
+                        ]
+                    ]
+                }
+            });
+
+            return res.status(200).json({
+                status: true,
+                data: users
+            })
+        } catch (error) {
+            console.error("Error while getting all users", error);
+            return res.status(500).json({ status: false, error: "Internal Server Error" });
+        }
+    },
+    patchUserStatus: async (req, res) => {
+        try {
+            const { id, status } = req.body;
+            const user = await User.findByPk(id);
+            if (!user) {
+                return res.status(404).json({ error: "User not found" });
+            }
+            await User.update({ status }, { where: { id } });
+            return res.status(200).json({ status: true, message: "User status updated successfully." });
+        } catch (error) {
+            console.error("Error while updating user status", error);
+            return res.status(500).json({ status: false, error: "Internal Server Error" });
+        }
+    },
+    getDashboardStats: async (req, res) => {
+        try {
+            const userCount = await User.count();
+            const orderCount = await Order.count();
+            const productCount = await Products.count();
+            return res.status(200).json({
+                status: true,
+                data: {
+                    userCount,
+                    orderCount,
+                    productCount
+                }
+            })
+        } catch (error) {
+            console.error("Error while getting dashboard stats", error);
+            return res.status(500).json({ status: false, error: "Internal Server Error" });
         }
     }
 };

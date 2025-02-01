@@ -1,14 +1,20 @@
 const { Sequelize } = require('sequelize');
 
-const sequelize = new Sequelize({
-    username: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_DATABASE,
+const sequelize = new Sequelize(process.env.DB_DATABASE, process.env.DB_USERNAME, process.env.DB_PASSWORD, {
     host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
     dialect: process.env.DB_DIALECT,
     logging: false,
-    timezone: '+00:00',  // UTC
+    timezone: '+00:00',
+    keepAlive: true,
+    dialectOptions: {
+        connectTimeout: 60000,
+    },
+    pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000,
+    }
 });
 
 sequelize.authenticate()
@@ -17,11 +23,5 @@ sequelize.authenticate()
     }).catch((error) => {
         console.error('Unable to connect to the database:', error);
     });
-
-sequelize.sync({ force: false }).then(() => {
-    console.log('Database & tables created!');
-}).catch((error) => {
-    console.error('Unable to create database & tables:', error);
-})
 
 module.exports = sequelize;

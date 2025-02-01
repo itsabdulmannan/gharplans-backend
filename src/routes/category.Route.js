@@ -1,6 +1,7 @@
 const categoryController = require('../controllers/category.Controller');
 const categoryRoute = require('express').Router();
 const { authenticate, authorize } = require('../middleware/auth');
+const upload = require('../middleware/multer');
 
 /**
  * @swagger
@@ -68,7 +69,7 @@ const { authenticate, authorize } = require('../middleware/auth');
  *       500:
  *         description: Internal Server Error
  *         content:
- *           application/json:
+ *           multipart/form-data:
  *             schema:
  *               type: object
  *               properties:
@@ -80,7 +81,7 @@ const { authenticate, authorize } = require('../middleware/auth');
  *                   example: "Internal Server Error"
  */
 
-categoryRoute.post('/', authenticate, authorize('admin'), categoryController.addCategory);
+categoryRoute.post('/', authenticate, authorize('admin'), upload.single('image'), categoryController.addCategory);
 /**
  * @swagger
  * /category:
@@ -307,7 +308,7 @@ categoryRoute.get('/', categoryController.getCategoryByIdAndName);
  *                   type: string
  *                   example: "Internal Server Error"
  */
-categoryRoute.put('/:id', authenticate, authorize('admin'), categoryController.updateCategory);
+categoryRoute.put('/:id', upload.single('image'), authenticate, authorize('admin'), categoryController.updateCategory);
 
 /**
  * @swagger
@@ -367,5 +368,84 @@ categoryRoute.put('/:id', authenticate, authorize('admin'), categoryController.u
  *                   example: "Internal Server Error"
  */
 categoryRoute.delete('/:id', authenticate, authorize('admin'), categoryController.deleteCategory);
+
+/**
+ * @swagger
+ * /category/status:
+ *   patch:
+ *     summary: Update the status of a category
+ *     description: Update the status (active/inactive) of a category by its ID.
+ *     tags:
+ *       - Category
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: integer
+ *                 description: The ID of the category to be updated
+ *                 example: 1
+ *               status:
+ *                 type: string
+ *                 description: The new status of the category ("active" or "inactive")
+ *                 example: "active"
+ *     responses:
+ *       200:
+ *         description: Successfully updated the category status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Category status updated successfully."
+ *       400:
+ *         description: Invalid input, missing or incorrect parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: "Invalid input"
+ *       404:
+ *         description: Category not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: "Category not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
+categoryRoute.patch('/status', categoryController.patchCaregoryStatus);
 
 module.exports = categoryRoute;

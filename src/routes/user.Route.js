@@ -1,6 +1,7 @@
 const userRouter = require('express').Router();
 const userController = require('../controllers/user.Controller');
 const { authenticate } = require('../middleware/auth');
+const upload = require('../middleware/multer');
 
 /**
  * @swagger
@@ -105,7 +106,7 @@ const { authenticate } = require('../middleware/auth');
  *                   example: "Validation error or missing fields"
  */
 
-userRouter.post('/register', userController.registerUser);
+userRouter.post('/register', upload.single('profileImage'), userController.registerUser);
 
 /**
  * @swagger
@@ -354,5 +355,143 @@ userRouter.post('/reset-password', authenticate, userController.resetPassword);
  *         description: Internal server error
  */
 userRouter.post('/update-password', userController.updatePassword);
+
+/**
+ * @swagger
+ * /user:
+ *   get:
+ *     summary: Retrieve the logged-in user's details
+ *     description: Get the details of the currently logged-in user using the user ID from the token.
+ *     tags:
+ *       - User
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved the user details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: true
+ *                 getUser:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     username:
+ *                       type: string
+ *                       example: "john_doe"
+ *                     email:
+ *                       type: string
+ *                       example: "john.doe@example.com"
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: "Internal Server Error"
+ */
+userRouter.get('/', authenticate, userController.getUser);
+
+/**
+ * @swagger
+ * /user/all:
+ *   get:
+ *     summary: Get all users with optional filters
+ *     description: Fetch all users with optional filtering by name (firstName, lastName, or username) and status.
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: query
+ *         name: name
+ *         required: false
+ *         description: The name to filter users by (supports partial match for firstName, lastName, or username).
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: status
+ *         required: false
+ *         description: The status of the user to filter by (true or false).
+ *         schema:
+ *           type: boolean
+ *     responses:
+ *       200:
+ *         description: List of users with total reviews and orders.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       username:
+ *                         type: string
+ *                         example: john_doe
+ *                       firstName:
+ *                         type: string
+ *                         example: John
+ *                       lastName:
+ *                         type: string
+ *                         example: Doe
+ *                       status:
+ *                         type: boolean
+ *                         example: true
+ *                       totalReviews:
+ *                         type: integer
+ *                         example: 10
+ *                       totalOrders:
+ *                         type: integer
+ *                         example: 5
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: Internal Server Error
+ */
+
+userRouter.get('/all', userController.getAllUsers);
+
+userRouter.patch('/update', userController.patchUserStatus);
+userRouter.get('/statistics', userController.getDashboardStats);
 
 module.exports = userRouter;

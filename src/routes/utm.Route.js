@@ -74,5 +74,7 @@ utmRouter.post('/create', utmController.createUtm);
     */
 
 utmRouter.get('/', trackTraffic, utmController.getUtm);
+utmRouter.get('/all', utmController.getAllUtm);
+utmRouter.patch('/update', utmController.patchUtmStatus);
 
 module.exports = utmRouter;

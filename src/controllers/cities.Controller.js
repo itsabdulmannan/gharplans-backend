@@ -36,8 +36,9 @@ const citiesController = {
         try {
             const { id } = req.params;
             const { name } = req.body;
+            console.log('Id', id, 'Name', name);
             const updatedCity = await cities.update({ name }, { where: { id } });
-            res.status(200).json({ status: true, message: "City deleted successfully.", updatedCity });
+            res.status(200).json({ status: true, message: "City updated successfully.", updatedCity });
         } catch (error) {
             console.error("Error updating city:", error);
             res.status(500).json({ message: error.message });
