@@ -2,6 +2,8 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require('swagger-jsdoc');
 const path = require('path');
 
+const serverUrl = process.env.NODE_ENV === 'production' ? 'http://13.61.12.205:3005' : 'http://localhost:3005';
+
 const swaggerOptions = {
     swaggerDefinition: {
         openapi: "3.0.0",
@@ -14,7 +16,7 @@ const swaggerOptions = {
         },
         servers: [
             {
-                url: "http://localhost:3005",
+                url: serverUrl,  
             },
         ],
         components: {
