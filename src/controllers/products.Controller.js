@@ -124,8 +124,8 @@ const productController = {
                     },
                     {
                         model: ProductColors,
-                        as: 'colors', // Use the correct alias
-                        attributes: ['id', 'color', 'image'], // Only include valid columns
+                        as: 'colors',
+                        attributes: ['id', 'color', 'image'], 
                     },
                 ],
                 offset: pageOffset,

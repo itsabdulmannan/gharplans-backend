@@ -15,8 +15,8 @@ const userController = {
 
     registerUser: async (req, res) => {
         const { firstName, lastName, email, password, contactNo, address, city, dob } = req.body;
-        const imgeUrl = req.file ? req.file.path : null;
-
+    
+        const imageUrl = `/image/${req.file.filename}`
         const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
         if (!email || !emailRegex.test(email)) {
             return res.status(400).json({ message: 'Invalid email format.' });
@@ -51,7 +51,7 @@ const userController = {
                 contactNo,
                 address,
                 city,
-                profileImage: imgeUrl,
+                profileImage: imageUrl,
                 status: true,
                 isVerified: false
             };

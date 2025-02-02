@@ -6,7 +6,9 @@ const Category = require('../models/category.Model');
 const reviewController = {
     addReview: async (req, res) => {
         try {
-            const { userId, productId, rating, review } = req.body;
+            const { productId, rating, review } = req.body;
+            const user = req.user;
+            const userId = user.id;
             const addedReview = await reviewModel.create({ userId, productId, rating, review });
             res.status(201).json({ status: true, message: "Review added successfully.", addedReview });
         } catch (error) {

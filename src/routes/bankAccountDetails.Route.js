@@ -108,7 +108,7 @@ bankAccountDetailsRouter.post('/bankAccountDetails', authenticate, authorize('ad
  *       500:
  *         description: Internal server error
  */
-bankAccountDetailsRouter.get('/bankAccountDetails', authenticate, bankAccountDetailsController.getBankAccountDetails);
+bankAccountDetailsRouter.get('/bankAccountDetails',bankAccountDetailsController.getBankAccountDetails);
 
 /**
  * @swagger
