@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
-const utmLink = sequelize.define('utmLink', {
+const utmLink = sequelize.define('utmLinks', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -45,7 +45,7 @@ const utmLink = sequelize.define('utmLink', {
         defaultValue: true
     }
 }, {
-    tableName: 'utmLink',
+    tableName: 'utmLinks',
     timestamps: true,
 });
 

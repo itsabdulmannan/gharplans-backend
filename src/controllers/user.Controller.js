@@ -16,8 +16,6 @@ const userController = {
     registerUser: async (req, res) => {
         const { firstName, lastName, email, password, contactNo, address, city, dob } = req.body;
         const imgeUrl = req.file ? req.file.path : null;
-        console.log(req.body,imgeUrl)
-        console.log(req.file)
 
         const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
         if (!email || !emailRegex.test(email)) {
@@ -54,7 +52,7 @@ const userController = {
                 address,
                 city,
                 profileImage: imgeUrl,
-                status: 'active',
+                status: true,
                 isVerified: false
             };
 
@@ -197,12 +195,16 @@ const userController = {
         }
     },
     resetPassword: async (req, res) => {
+        console.log("first")
         const token = req.header('Authorization').replace('Bearer ', '');
         try {
-            const user = await User.findOne({ where: { email: req.user.email } });
+            const userData = jwt.verify(token, process.env.JWT_SECRET_KEY);
+            const user = await User.findOne({ where: { email: userData.email } });
+            console.log(token, "dd")
             if (!user) {
                 return res.status(404).json({ error: "User not found" });
             }
+            console.log(req.body, "dd")
             const { newPassword } = req.body;
             const salt = await bcrypt.genSalt(10);
             const hash = await bcrypt.hash(newPassword, salt);

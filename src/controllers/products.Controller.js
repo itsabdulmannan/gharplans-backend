@@ -11,7 +11,7 @@ const productController = {
     getProducts: async (req, res) => {
         try {
             const { id, name, minPrice, maxPrice, offset, limit, categoryId } = req.query;
-
+            console.log(categoryId)
             const pageOffset = parseInt(offset) || 0;
             const pageLimit = parseInt(limit) || 10;
 
