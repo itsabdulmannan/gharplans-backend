@@ -44,3 +44,6 @@ similerProductModel.belongsTo(Products, { foreignKey: 'similarProductId', as: 's
 
 Products.hasMany(ProductColors, { foreignKey: 'productId', as: 'colors' });
 ProductColors.belongsTo(Products, { foreignKey: 'productId', as: 'colors' });
+
+ProductColors.hasMany(similerProductModel, { foreignKey: 'similarProductId', as: 'similarProductDetailsColors' });
+similerProductModel.belongsTo(ProductColors, { foreignKey: 'similarProductId', as: 'similarProductDetailsColors' });

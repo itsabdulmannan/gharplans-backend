@@ -495,7 +495,6 @@ const productController = {
             const { productId } = req.params;
 
             const product = await Products.findByPk(productId);
-
             if (!product) {
                 return res.status(404).json({ error: 'Product not found' });
             }
@@ -508,18 +507,30 @@ const productController = {
                         as: 'similarProductDetails',
                         attributes: ['id', 'name', 'price', 'image'],
                     },
+                    {
+                        model: ProductColors,
+                        as: 'similarProductDetailsColors',
+                        attributes: ['id', 'productId', 'color', 'image'],
+                    }
                 ],
                 raw: true,
             });
 
             const host = req.protocol + '://' + req.get('host');
-
             const response = similarProducts.map(item => {
+                const images = Array.isArray(item['similarProductDetailsColors.image'])
+                    ? item['similarProductDetailsColors.image']
+                    : [item['similarProductDetailsColors.image']];
+
                 return {
-                    id: item['similarProductDetails.id'],
+                    similarProductId: item['similarProductDetails.id'],
                     name: item['similarProductDetails.name'],
                     price: item['similarProductDetails.price'],
-                    image: host + item['similarProductDetails.image']
+                    colors: [{
+                        color: item['similarProductDetailsColors.color'],
+                        image: images.map(img => host + img),
+                    }],
+                    productId: item['productId'],
                 };
             });
 
