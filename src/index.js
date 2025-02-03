@@ -12,7 +12,7 @@ setupSwaggger(app);
 require('./models/associations.Model');
 
 // Middleware for serving static files
-app.use('/image', express.static(path.join(__dirname, '../public/images')));
+app.use('/images', express.static(path.join(__dirname, '../public/images')));
 app.use('/pdf', express.static(path.join(__dirname, '../public/pdf')));
 
 app.use(cors());

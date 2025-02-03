@@ -14,7 +14,7 @@ const productController = {
             console.log(categoryId)
             const pageOffset = parseInt(offset) || 0;
             const pageLimit = parseInt(limit) || 10;
-
+            console.log(minPrice, maxPrice)
             const whereConditions = {};
             if (categoryId) {
                 whereConditions.categoryId = categoryId;
@@ -125,7 +125,7 @@ const productController = {
                     {
                         model: ProductColors,
                         as: 'colors',
-                        attributes: ['id', 'color', 'image'], 
+                        attributes: ['id', 'color', 'image'],
                     },
                 ],
                 offset: pageOffset,
