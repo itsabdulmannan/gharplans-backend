@@ -15,32 +15,7 @@ require('./models/associations.Model');
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
 app.use('/pdf', express.static(path.join(__dirname, '../public/pdf')));
 
-const corsOptions = {
-    origin: (origin, callback) => {
-        const allowedOrigins = [
-            'https://gharplans-frontend.vercel.app',
-            'gharplans-frontend-abdul-mannans-projects-de231574.vercel.app',
-            'https://gharplans-frontend-git-main-abdul-mannans-projects-de231574.vercel.app',
-            'https://gharplans-frontend-oy7zscem2-abdul-mannans-projects-de231574.vercel.app',
-
-            // Second frontend URLs
-            'https://gharplans-website.vercel.app',
-            'gharplans-website-abdul-mannans-projects-de231574.vercel.app',
-            'https://gharplans-website-git-main-abdul-mannans-projects-de231574.vercel.app',
-            'https://gharplans-website-iaf6h0kxi-abdul-mannans-projects-de231574.vercel.app'
-        ];
-
-        if (allowedOrigins.includes(origin) || !origin) {
-            callback(null, true);
-        } else {
-            callback(new Error('CORS policy error: Not allowed'), false);
-        }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-};
-
-app.use(cors(corsOptions));
+app.use(cors());
 
 // Middleware for parsing incoming request data
 app.use(express.json());
