@@ -41,6 +41,5 @@ app.use('/frequently', require('./routes/faq.Routes'));
 
 // Start the server
 app.listen(process.env.PORT, async () => {
-    console.log("Checking the connection", process.env.PORT, process.env.DB_URL, process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, process.env.DB_PORT, process.env.JWT_SECRET);
     console.log(`Server is running on port ${process.env.PORT}`);
 });
