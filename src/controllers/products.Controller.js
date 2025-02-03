@@ -260,7 +260,7 @@ const productController = {
                         return;
                     }
 
-                    const imageUrls = colorFiles.map(file => `/image/${file.filename}`);
+                    const imageUrls = colorFiles.map(file => `/images/${file.filename}`);
 
                     return ProductColors.create({
                         productId: product.id,
