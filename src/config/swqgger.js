@@ -15,7 +15,7 @@ const swaggerOptions = {
         servers: [
             {
                 name: "Production",
-                url: 'http://13.61.12.205'
+                url: 'http://13.49.243.130'
             },
             {
                 name: "Development",

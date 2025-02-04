@@ -4,7 +4,7 @@ const { Op } = require('sequelize');
 const Review = require('../models/review.Model');
 const sequelize = require('../config/database');
 const discountedProducts = require('../models/discountedProducts.Model');
-const similerProductModel = require('../models/similarProducts.Model');
+const similarProductModel = require('../models/similarProducts.Model');
 const ProductColors = require('../models/productColor.Model');
 
 const productController = {
@@ -499,38 +499,39 @@ const productController = {
                 return res.status(404).json({ error: 'Product not found' });
             }
 
-            const similarProducts = await similerProductModel.findAll({
+            const similarProducts = await similarProductModel.findAll({
                 where: { productId },
                 include: [
                     {
                         model: Products,
                         as: 'similarProductDetails',
                         attributes: ['id', 'name', 'price', 'image'],
+                        include: {
+                            model: ProductColors,
+                            as: 'colors',
+                            attributes: ['id', 'color', 'image'],
+                        },
                     },
-                    {
-                        model: ProductColors,
-                        as: 'similarProductDetailsColors',
-                        attributes: ['id', 'productId', 'color', 'image'],
-                    }
                 ],
-                raw: true,
+                raw: false,
             });
 
             const host = req.protocol + '://' + req.get('host');
             const response = similarProducts.map(item => {
-                const images = Array.isArray(item['similarProductDetailsColors.image'])
-                    ? item['similarProductDetailsColors.image']
-                    : [item['similarProductDetailsColors.image']];
+                const productDetails = item.similarProductDetails;
+                const colors = productDetails?.colors || [];
 
                 return {
-                    similarProductId: item['similarProductDetails.id'],
-                    name: item['similarProductDetails.name'],
-                    price: item['similarProductDetails.price'],
-                    colors: [{
-                        color: item['similarProductDetailsColors.color'],
-                        image: images.map(img => host + img),
-                    }],
-                    productId: item['productId'],
+                    similarProductId: productDetails?.id || null,
+                    name: productDetails?.name || null,
+                    price: productDetails?.price || null,
+                    colors: colors.map(colorItem => ({
+                        color: colorItem?.color || null,
+                        image: colorItem?.image
+                            ? [colorItem.image.startsWith('http') ? colorItem.image : `${host}${colorItem.image}`]
+                            : [],
+                    })),
+                    productId: item.productId,
                 };
             });
 
