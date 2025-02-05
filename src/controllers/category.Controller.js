@@ -7,7 +7,7 @@ const categoryController = {
         try {
             console.log(req.body)
             const { name, description, status } = req.body;
-            const imageUrl = `/images/${req.file.filename}`
+            const imageUrl = `/assets/${req.file.filename}`
             const category = await Category.create({ name, description, image: imageUrl, status });
             res.status(201).json({ status: true, message: "Category added successfully.", category });
         } catch (error) {

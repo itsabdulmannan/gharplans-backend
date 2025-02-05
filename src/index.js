@@ -15,7 +15,12 @@ require('./models/associations.Model');
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
 app.use('/pdf', express.static(path.join(__dirname, '../public/pdf')));
 
-app.use(cors());
+app.use(cors({
+    origin: ["http://16.170.239.246", "http://16.170.239.246:3000", "http://localhost:3000"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+}));
 
 // Middleware for parsing incoming request data
 app.use(express.json());
@@ -39,7 +44,9 @@ app.use('/tac', require('./routes/termsAndCondition.Route'));
 app.use('/pap', require('./routes/privacyAndPolicy.Route'));
 app.use('/frequently', require('./routes/faq.Routes'));
 
+
+const PORT = process.env.PORT || 80;
 // Start the server
-app.listen(process.env.PORT, async () => {
-    console.log(`Server is running on port ${process.env.PORT}`);
+app.listen(PORT, async () => {
+    console.log(`Server is running on port ${PORT}`);
 });
