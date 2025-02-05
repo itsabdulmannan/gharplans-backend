@@ -15,7 +15,7 @@ const swaggerOptions = {
         servers: [
             {
                 name: "Production",
-                url: 'http://13.49.243.130'
+                url: 'http://16.170.239.246'
             },
             {
                 name: "Development",
@@ -43,7 +43,7 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
 
 const setupSwagger = (app) => {
-    app.use('/api', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+    app.use('/swagger', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 };
 
 module.exports = setupSwagger;

@@ -58,7 +58,7 @@ const orderController = {
         }
     },
     getOrders: async (req, res) => {
-        const { orderId, status, name, limit, offset } = req.query;
+        const { orderId, status, name, userId, limit, offset } = req.query;
 
         const pageLimit = parseInt(limit) || 10;
         const pageOffset = parseInt(offset) || 0;
@@ -90,6 +90,10 @@ const orderController = {
                     { lastName: { [Op.like]: `%${name}%` } }
                 ]
             };
+        }
+
+        if (userId) {
+            queryOptions.where = { ...queryOptions.where, userId };
         }
 
         try {

@@ -84,7 +84,7 @@ orderRouter.post('/', authenticate, authorize('User'), orderController.addOrder)
  * @swagger
  * /orders:
  *   get:
- *     summary: Get orders by ID, status, user name, or all orders
+ *     summary: Get orders by ID, status, user name, user ID, or all orders
  *     tags: [Orders]
  *     parameters:
  *       - in: query
@@ -105,6 +105,12 @@ orderRouter.post('/', authenticate, authorize('User'), orderController.addOrder)
  *         schema:
  *           type: string
  *         description: Name of the user (optional, to filter by user name)
+ *       - in: query
+ *         name: userId
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Unique ID of the user (optional, to filter orders by user)
  *       - in: query
  *         name: limit
  *         required: false

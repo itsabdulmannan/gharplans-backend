@@ -76,7 +76,7 @@ const cartController = {
                     {
                         model: User,
                         as: 'user',
-                        attributes: ['id', 'name'],
+                        attributes: ['id', 'firstName', 'lastName'],
                     },
                     {
                         model: Product,
@@ -112,7 +112,7 @@ const cartController = {
                     itemTotal: total.toFixed(2),
                     createdAt: item.createdAt,
                     updatedAt: item.updatedAt,
-                    user: { id: item.user.id, name: item.user.name },
+                    user: { id: item.user.id, name: item.user.firstName + " " + item.user.lastName },
                 };
             });
 
