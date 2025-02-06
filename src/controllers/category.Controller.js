@@ -7,7 +7,7 @@ const categoryController = {
         try {
             console.log(req.body)
             const { name, description, status } = req.body;
-            const imageUrl = `/assets/${req.file.filename}`
+            const imageUrl = `/images/${req.file.filename}`
             const category = await Category.create({ name, description, image: imageUrl, status });
             res.status(201).json({ status: true, message: "Category added successfully.", category });
         } catch (error) {
@@ -34,10 +34,10 @@ const categoryController = {
                 }
 
                 const category = data.dataValues;
-                category.image = `${req.protocol}://${req.get('host')}${category.image}`;
+                category.image = `${process.env.BASE_URL}/${category.image.replace(/^\/|\/$/g, '')}`;
                 if (category.Products) {
                     category.Products = category.Products.map((product) => {
-                        product.image = `${req.protocol}://${req.get('host')}${product.image}`;
+                        product.image = `${process.env.BASE_URL}/${product.image.replace(/^\/|\/$/g, '')}`;
                         return product;
                     });
                 }
@@ -94,20 +94,20 @@ const categoryController = {
 
                 const categoriesData = categories.map((category) => {
                     const categoryData = category.dataValues;
-                    categoryData.image = `${req.protocol}://${req.get('host')}${categoryData.image}`;
+                    categoryData.image = `${process.env.BASE_URL}/${categoryData.image.replace(/^\/|\/$/g, '')}`;
                     if (categoryData.Products) {
                         categoryData.Products = categoryData.Products.map((product) => {
-                            product.image = `${req.protocol}://${req.get('host')}${product.image}`;
+                            product.image = `${process.env.BASE_URL}/${product.image.replace(/^\/|\/$/g, '')}`;
                             return product;
                         });
                     }
+
                     return categoryData;
                 });
 
                 return res.status(200).json({
                     status: true,
-                    categories:
-                        categoriesData,
+                    categories: categoriesData,
                     pagination: {
                         totalRecords: totalCategories,
                         totalPages: totalPages,
@@ -132,13 +132,15 @@ const categoryController = {
 
                 const categoriesData = categories.map((category) => {
                     const categoryData = category.dataValues;
-                    categoryData.image = `${req.protocol}://${req.get('host')}${categoryData.image}`;
+                    categoryData.image = `${process.env.BASE_URL}/${categoryData.image.replace(/^\/|\/$/g, '')}`;
+
                     if (categoryData.Products) {
                         categoryData.Products = categoryData.Products.map((product) => {
-                            product.image = `${req.protocol}://${req.get('host')}${product.image}`;
+                            product.image = `${process.env.BASE_URL}/${product.image.replace(/^\/|\/$/g, '')}`;
                             return product;
                         });
                     }
+
                     return categoryData;
                 });
 

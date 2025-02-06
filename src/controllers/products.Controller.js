@@ -75,7 +75,9 @@ const productController = {
                         categoryId: product.category.id,
                         name: product.category.name,
                     },
-                    image: host + productJson.image,
+                    image: productJson.image
+                        ? `${process.env.BASE_URL}/${productJson.image.replace(/^\/|\/$/g, '')}`
+                        : `${process.env.BASE_URL}/https://picsum.photos/200/300`,
                     rating: averageRating,
                     discountTiers: []
                 };
@@ -160,7 +162,10 @@ const productController = {
                         categoryId: product.category.id,
                         name: product.category.name,
                     },
-                    image: host + productJson.image,
+                    image: productJson.image
+                        ? `${process.env.BASE_URL}/${productJson.image.replace(/^\/|\/$/g, '')}`
+                        : `${process.env.BASE_URL}/https://picsum.photos/200/300`,
+
                     rating: averageRating,
                     discountTiers: []
                 };
@@ -525,10 +530,13 @@ const productController = {
                     similarProductId: productDetails?.id || null,
                     name: productDetails?.name || null,
                     price: productDetails?.price || null,
+                    image: productDetails?.image
+                        ? `${host}/${productDetails.image.replace(/^\/|\/$/g, '')}`
+                        : null,
                     colors: colors.map(colorItem => ({
                         color: colorItem?.color || null,
                         image: colorItem?.image
-                            ? [colorItem.image.startsWith('http') ? colorItem.image : `${host}${colorItem.image}`]
+                            ? [`${host}/${colorItem.image.replace(/^\/|\/$/g, '')}`]
                             : [],
                     })),
                     productId: item.productId,
