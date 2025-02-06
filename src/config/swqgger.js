@@ -15,7 +15,7 @@ const swaggerOptions = {
         servers: [
             {
                 name: "Production",
-                url: 'http://16.170.239.246'
+                url: 'http://16.170.239.246/api'
             },
             {
                 name: "Development",
