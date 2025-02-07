@@ -27,6 +27,7 @@ const authenticate = async function (req, res, next) {
 
 const authorize = function (...roleNames) {
   return function (req, res, next) {
+    console.log(req.user)
     if (req.user && roleNames.includes(req.user.role)) {
       return next();
     }

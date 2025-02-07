@@ -9,6 +9,7 @@ const ProductsDeliveryCharge = require('./productDeliveryCharges.Model');
 const Cities = require('./cities.Model');
 const similerProductModel = require('../models/similarProducts.Model');
 const ProductColors = require('./productColor.Model');
+const favourites = require('./favourite.Model');
 
 Products.belongsTo(Category, { foreignKey: 'categoryId', onDelete: 'SET NULL' });
 Category.hasMany(Products, { foreignKey: 'categoryId' });
@@ -47,3 +48,6 @@ ProductColors.belongsTo(Products, { foreignKey: 'productId', as: 'colors' });
 
 ProductColors.hasMany(similerProductModel, { foreignKey: 'similarProductId', as: 'similarProductDetailsColors' });
 similerProductModel.belongsTo(ProductColors, { foreignKey: 'similarProductId', as: 'similarProductDetailsColors' });
+
+favourites.belongsTo(Products, { foreignKey: 'ProductId', as: 'product' });
+Products.hasMany(favourites, { foreignKey: 'ProductId', as: 'favourites' });

@@ -873,5 +873,6 @@ prodcustRoute.post('/similar-products', authenticate, authorize('admin'), produc
 prodcustRoute.patch('/status', productController.patchProductStatus);
 prodcustRoute.delete('/remove/:productId/:discountTierId', productController.deleteDiscountTiers);
 prodcustRoute.get('/dicounted-products/:productId', productController.getDiscount);
+prodcustRoute.get('/featured-products', productController.getFeacturedProducts);
 
 module.exports = prodcustRoute;

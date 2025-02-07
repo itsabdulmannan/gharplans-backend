@@ -15,12 +15,13 @@ require('./models/associations.Model');
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
 app.use('/pdf', express.static(path.join(__dirname, '../public/pdf')));
 
-app.use(cors({
-    origin: ["http://16.170.239.246", "http://16.170.239.246:3000", "http://localhost:3000"],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-}));
+// app.use(cors({
+//     origin: ["http://16.170.239.246", "http://16.170.239.246:3000", "http://localhost:3000"],
+//     credentials: true,
+//     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+//     allowedHeaders: ["Content-Type", "Authorization"],
+// }));
+app.use(cors());
 
 // Middleware for parsing incoming request data
 app.use(express.json());

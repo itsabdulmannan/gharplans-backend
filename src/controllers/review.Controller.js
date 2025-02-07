@@ -9,6 +9,7 @@ const reviewController = {
             const { productId, rating, review } = req.body;
             const user = req.user;
             const userId = user.id;
+            console.log("User", user);
             const addedReview = await reviewModel.create({ userId, productId, rating, review });
             res.status(201).json({ status: true, message: "Review added successfully.", addedReview });
         } catch (error) {

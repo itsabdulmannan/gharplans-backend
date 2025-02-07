@@ -6,12 +6,13 @@ const sequelize = require('../config/database');
 const discountedProducts = require('../models/discountedProducts.Model');
 const similarProductModel = require('../models/similarProducts.Model');
 const ProductColors = require('../models/productColor.Model');
+const ProductsDeliveryCharge = require('../models/productDeliveryCharges.Model');
+const cities = require('../models/cities.Model');
 
 const productController = {
     getProducts: async (req, res) => {
         try {
             const { id, name, minPrice, maxPrice, offset, limit, categoryId } = req.query;
-            console.log(categoryId)
             const pageOffset = parseInt(offset) || 0;
             const pageLimit = parseInt(limit) || 10;
             console.log(minPrice, maxPrice)
@@ -20,7 +21,7 @@ const productController = {
                 whereConditions.categoryId = categoryId;
             }
             if (name) {
-                whereConditions.name = { [Op.like]: `%${name}%` };
+                whereConditions.name = { [Op.iLike]: `%${name}%` };
             }
             if (minPrice) {
                 whereConditions.price = { [Op.gte]: parseFloat(minPrice) };
@@ -45,6 +46,23 @@ const productController = {
                             as: 'colors',
                             attributes: ['id', 'color', 'image'],
                         },
+                        {
+                            model: ProductsDeliveryCharge,
+                            as: 'deliveryCharges',
+                            attributes: ['id', 'sourceCityId', 'destinationCityId', 'deliveryCharge'],
+                            include: [
+                                {
+                                    model: cities,
+                                    as: 'sourceCity',
+                                    attributes: ['id', 'name'],
+                                },
+                                {
+                                    model: cities,
+                                    as: 'destinationCity',
+                                    attributes: ['id', 'name'],
+                                },
+                            ],
+                        }
                     ],
                 });
 
@@ -129,12 +147,28 @@ const productController = {
                         as: 'colors',
                         attributes: ['id', 'color', 'image'],
                     },
+                    {
+                        model: ProductsDeliveryCharge,
+                        as: 'deliveryCharges',
+                        attributes: ['id', 'sourceCityId', 'destinationCityId', 'deliveryCharge'],
+                        include: [
+                            {
+                                model: cities,
+                                as: 'sourceCity',
+                                attributes: ['id', 'name'],
+                            },
+                            {
+                                model: cities,
+                                as: 'destinationCity',
+                                attributes: ['id', 'name'],
+                            },
+                        ],
+                    }
                 ],
+                distinct: true,
                 offset: pageOffset,
                 limit: pageLimit,
             });
-
-
 
             const host = req.protocol + '://' + req.get('host');
 
@@ -566,7 +600,32 @@ const productController = {
             console.error("Error while updating product status:", error);
             return res.status(500).json({ error: error.message });
         }
-    }
-};
+    },
+    getFeacturedProducts: async (req, res) => {
+        try {
+            const featuredProducts = await Products.findAll({
+                where: { homeScreen: true },
+                include: [
+                    {
+                        model: Category,
+                        attributes: ['id', 'name'],
+                    },
+                    {
+                        model: ProductColors,
+                        as: 'colors',
+                        attributes: ['id', 'color', 'image'],
+                    },
+                ],
+            })
 
+            return res.status(200).json({
+                status: true,
+                message: 'Featured products fetched successfully',
+                data: featuredProducts,
+            });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+}
 module.exports = productController;
