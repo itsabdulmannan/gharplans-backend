@@ -15,7 +15,7 @@ const userController = {
 
     registerUser: async (req, res) => {
         const { firstName, lastName, email, password, contactNo, address, city, dob } = req.body;
-    
+
         const imageUrl = `/image/${req.file.filename}`
         const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
         if (!email || !emailRegex.test(email)) {
@@ -155,7 +155,7 @@ const userController = {
             }
 
             const otp = generateOTP();
-            const otpExpires = Date.now() + 20 * 60 * 1000; // 20 minutes from now
+            const otpExpires = Date.now() + 20 * 60 * 1000;
 
             await User.update({ otp, otpExpires }, { where: { email } });
 
@@ -171,7 +171,7 @@ const userController = {
             return res.status(200).json({ status: true, message: "New OTP sent to email." });
         } catch (error) {
             console.error("Error sending OTP for password reset", error);
-            return res.status(500).json({ status: false, error: "Internal Server Error" });
+            return res.status(500).json({ status: false, error: "Internal Server Error", error: error.message });
         }
     },
     verifyResetOtp: async (req, res) => {
