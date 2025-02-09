@@ -7,13 +7,10 @@ const productDeliveryChargesController = {
     addProductDeliveryCharges: async (req, res) => {
         try {
             const { productId, sourceCityId, destinationCityId, price } = req.body;
-            console.log("Destrucutred Data", "Prodcut Id", productId, "Source City Id", sourceCityId, "Destination City Id", destinationCityId, "Price", price);
-            console.log("Request Body:", req.body);
             const checkProduct = await product.findByPk(productId);
             if (!checkProduct) {
                 return res.status(404).json({ message: `Product with id ${productId} not found.` });
             }
-            console.log(sourceCityId, destinationCityId);
             const productDeliveryCharges = await productsdeliverycharges.create({ productId, sourceCityId, destinationCityId, deliveryCharge: price });
             res.status(201).json(productDeliveryCharges);
         } catch (error) {
@@ -82,7 +79,6 @@ const productDeliveryChargesController = {
             const { id } = req.params;
             const { price, productId, sourceCityId, destinationCityId } = req.body;
 
-            console.log("Request Body:", req.body);
             if (!price || !productId || !sourceCityId || !destinationCityId) {
                 return res.status(400).json({ message: "Missing required fields: charge, productId, sourceCityId, and destinationCityId are required." });
             }

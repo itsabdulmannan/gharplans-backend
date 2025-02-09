@@ -11,7 +11,6 @@ const utmController = {
                 couponCode   //A unique coupon or promotional code associated with the campaign.
             } = req.body;
             // const utmUrl = `${baseUrl}?utm_source=${source}&utm_medium=${medium}&utm_campaign=${campaign}`;
-            console.log(req.body);
             const utmUrl = `${baseUrl}?utm_source=${encodeURIComponent(source)}&utm_medium=${encodeURIComponent(medium)}&utm_campaign=${encodeURIComponent(campaign)}`;
 
             const newUtm = await utm.create({ baseUrl, source, medium, campaign, utmUrl, couponCode })
@@ -73,7 +72,6 @@ const utmController = {
     patchUtmStatus: async (req, res) => {
         try {
             const { id, status } = req.query;
-            console.log(req.query,"dddddddd");
             const utmLink = await utm.findByPk(id);
             if (!utmLink) {
                 return res.status(404).json({ status: false, message: "No UTM link found" });

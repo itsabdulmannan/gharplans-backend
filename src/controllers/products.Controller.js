@@ -15,7 +15,6 @@ const productController = {
             const { id, name, minPrice, maxPrice, offset, limit, categoryId } = req.query;
             const pageOffset = parseInt(offset) || 0;
             const pageLimit = parseInt(limit) || 10;
-            console.log(minPrice, maxPrice)
             const whereConditions = {};
             if (categoryId) {
                 whereConditions.categoryId = categoryId;
@@ -271,8 +270,6 @@ const productController = {
                 colors
             } = req.body;
 
-            console.log(req.body);
-
             if (!name || !price || !categoryId || !description) {
                 return res.status(400).json({
                     error: 'Name, price, category, and description are required'
@@ -436,7 +433,6 @@ const productController = {
     getDiscount: async (req, res) => {
         try {
             const { productId } = req.params;
-            console.log(productId);
 
             const product = await Products.findByPk(productId);
 

@@ -9,10 +9,6 @@ async function generatePdf(quotationData) {
     const billFrom = billFromDetails || {};
     const billTo = billToDetails || {};
 
-    // console.log("Bill To Data:", billTo.billToName);
-    console.log("Bill To Phone:", billTo.billToPhone);
-
-
     const productRows = productDetails.map((product, index) => {
         return `
             <tr>
@@ -141,6 +137,7 @@ async function generatePdf(quotationData) {
 
     try {
         const browser = await puppeteer.launch({
+            executablePath: '/usr/bin/chromium-browser',
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
         });

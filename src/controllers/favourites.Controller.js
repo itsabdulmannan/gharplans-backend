@@ -34,23 +34,21 @@ const favouritesProductsController = {
             return res.status(500).json({ status: false, message: "Internal server error.", error: error.message });
         }
     },
-
-
     removeFromFavourite: async (req, res) => {
         try {
-            const { productId, userId } = req.body;
-            console.log("Request Body:", req.body);
-
-            const favProduct = await favourites.findOne({ where: { userId, productId } });
+            const { ProductId } = req.body;
+            const userData = req.user;
+            const userId = userData.id;
+            console.log(req.bod)
+            const favProduct = await favourites.findOne({ where: { userId, ProductId } });
             if (!favProduct) {
                 return res.status(404).json({ status: false, message: "Product not found in favourites" });
             }
-
             await favProduct.destroy();
             return res.status(200).json({ status: true, message: "Product removed from favourites" });
         } catch (error) {
             console.error("Error while removing product from favourites", error);
-            return res.status(500).json({ status: false, message: "Internal server error." });
+            return res.status(500).json({ status: false, message: "Internal server error.", error: error.message });
         }
     },
 

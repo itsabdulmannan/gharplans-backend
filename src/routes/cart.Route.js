@@ -58,7 +58,7 @@ cartRouter.post('/add', authenticate, authorize('User'), cartController.addItemT
  *     parameters:
  *       - in: query
  *         name: userId
- *         required: true
+ *         required: false
  *         schema:
  *           type: integer
  *         description: ID of the user

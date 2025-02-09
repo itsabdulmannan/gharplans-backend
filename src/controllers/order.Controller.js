@@ -191,7 +191,6 @@ const orderController = {
         const { paymentStatus } = req.body;
         try {
             const orderData = await order.findOne({ where: { orderId } });
-            console.log(orderId, paymentStatus);
             if (orderData) {
                 if (['approved', 'rejected'].includes(paymentStatus)) {
                     await order.update({ paymentStatus }, { where: { orderId } });
@@ -227,7 +226,6 @@ const orderController = {
     getAllPaymentScreenshots: async (req, res) => {
         try {
             const { pending, approved, rejected } = req.query;
-            console.log(req.query);
 
             const conditions = [];
 

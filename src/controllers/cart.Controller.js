@@ -3,23 +3,26 @@ const Product = require('../models/product.Model');
 const User = require('../models/user.Model');
 const Category = require('../models/category.Model')
 const discountedProducts = require('../models/discountedProducts.Model');
+const ProductColors = require('../models/productColor.Model');
 
 const cartController = {
     addItemToCart: async (req, res) => {
         try {
-            const { userId, productId, quantity } = req.body;
-
+            const { productId, quantity, options } = req.body;
+            console.log(req.body)
+            console.log(productId, options, quantity)
+            const userData = req.user
+            const { id: userId } = userData
             const checkExisitingItem = await cart.findOne({
                 where: { userId, productId }
             });
-
             if (checkExisitingItem) {
                 return res.status(400).json({ status: false, message: "Item already exists in cart" });
             }
 
             const findProduct = await Product.findOne({
                 where: { id: productId },
-                include: [{ model: discountedProducts, as: 'discountedProducts' }] // Corrected alias
+                include: [{ model: discountedProducts, as: 'discountedProducts' }]
             });
 
             if (!findProduct) {
@@ -54,6 +57,7 @@ const cartController = {
                 userId,
                 productId,
                 quantity,
+                options,
                 price: finalPrice.toFixed(2)
             });
 
@@ -64,12 +68,13 @@ const cartController = {
             });
         } catch (error) {
             console.error("Error adding item to cart:", error);
-            res.status(500).json({ status: false, message: "Internal Server Error" });
+            res.status(500).json({ status: false, message: "Internal Server Error", error: error.message });
         }
     },
     getCartItem: async (req, res) => {
         try {
-            const { userId } = req.query;
+            const userData = req.user;
+            const { id: userId } = userData;
             const cartItems = await cart.findAll({
                 where: { userId },
                 include: [
@@ -88,6 +93,11 @@ const cartController = {
                                 as: 'category',
                                 attributes: ['name'],
                             },
+                            {
+                                model: ProductColors,
+                                as: 'colors',
+                                attributes: ['id', 'color', 'image'],
+                            },
                         ],
                     },
                 ],
@@ -98,7 +108,6 @@ const cartController = {
             const formattedData = cartItems.map(item => {
                 const total = item.quantity * item.price;
                 totalCartValue += total;
-
                 return {
                     id: item.id,
                     product: {
@@ -107,12 +116,16 @@ const cartController = {
                         category: item.product.category ? item.product.category.name : null,
                         singleProductPrice: item.product.price,
                         discountedPrice: item.price,
+                        colors: item.product.colors || []
                     },
                     quantity: item.quantity,
                     itemTotal: total.toFixed(2),
                     createdAt: item.createdAt,
                     updatedAt: item.updatedAt,
-                    user: { id: item.user.id, name: item.user.firstName + " " + item.user.lastName },
+                    user: {
+                        id: item.user.id,
+                        name: `${item.user.firstName} ${item.user.lastName}`
+                    },
                 };
             });
 
@@ -129,8 +142,12 @@ const cartController = {
     },
     updateCart: async (req, res) => {
         try {
-            const { userId, productId, quantity } = req.body;
-
+            const { id, productId, quantity } = req.body;
+            const { id: userId } = req.user;
+            console.log(id, "Cart Id")
+            console.log("Product Id", productId)
+            console.log("Quantity", quantity)
+            console.log("User Id", userId);
             const findProduct = await Product.findOne({
                 where: {
                     id: productId
@@ -163,7 +180,7 @@ const cartController = {
             const cartItem = await cart.findOne({
                 where: {
                     userId,
-                    productId
+                    id
                 }
             });
 
@@ -186,11 +203,14 @@ const cartController = {
     },
     deleteCartItem: async (req, res) => {
         try {
-            const { userId, productId } = req.body;
+            const { productId } = req.body;
+            const userData = req.user;
+            const { id: userId } = userData;
+            console.log(productId, userId);
             const cartItem = await cart.findOne({
                 where: {
+                    id: productId,
                     userId,
-                    productId
                 }
             });
             if (!cartItem) {
@@ -200,7 +220,7 @@ const cartController = {
             res.status(200).json({ status: true, message: "Item removed from cart" });
         } catch (error) {
             console.error("Error deleting cart item:", error);
-            res.status(500).json({ status: false, message: "Internal Server Error" });
+            res.status(500).json({ status: false, message: "Internal Server Error", error: error.message });
         }
     }
 }

@@ -207,6 +207,6 @@ favouriteRouter.delete('/remove', authenticate, authorize('User'), favouritesPro
  *         description: Internal server error
  */
 
-favouriteRouter.get('/', authenticate, authorize('User','admin'), favouritesProductsController.getFavouriteProducts);
+favouriteRouter.get('/', authenticate, authorize('User'), favouritesProductsController.getFavouriteProducts);
 
 module.exports = favouriteRouter;

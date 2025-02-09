@@ -23,6 +23,10 @@ const cart = sequelize.define('cart', {
         type: DataTypes.DECIMAL,
         allowNull: false
     },
+    options: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     createdAt: {
         type: DataTypes.DATE,
         allowNull: false,

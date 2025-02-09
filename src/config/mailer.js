@@ -8,8 +8,6 @@ const transporter = nodemailer.createTransport({
         user: process.env.SMTP_MAIL,
         pass: process.env.SMTP_PASSWORD
     },
-    logger: true,
-    debug: true
 });
 
 const sendMail = (mailOptions) => {
