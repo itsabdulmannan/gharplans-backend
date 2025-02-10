@@ -267,7 +267,8 @@ const productController = {
                 status,
                 weight,
                 options,
-                colors
+                colors,
+                dimension
             } = req.body;
 
             if (!name || !price || !categoryId || !description) {
@@ -285,7 +286,8 @@ const productController = {
                 addiotionalInformation: additionalInformation || '',
                 status: status === 'true',
                 weight: weight || null,
-                options: Array.isArray(options) ? options : []
+                options: Array.isArray(options) ? options : [],
+                dimension: dimension || null
             });
 
             if (req.files && Array.isArray(colors)) {
