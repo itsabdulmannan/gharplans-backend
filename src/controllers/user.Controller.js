@@ -15,96 +15,96 @@ const userController = {
 
     registerUser: async (req, res) => {
         const {
-          firstName,
-          lastName,
-          email,
-          password,
-          contactNo,
-          address = null, 
-          city,
-          dob,
-        } = req.body;
-        console.log(req.body);
-        
-        const imageUrl = req.file ? `/image/${req.file.filename}` : null;
-        
-        const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-        if (!email || !emailRegex.test(email)) {
-          return res.status(400).json({ message: 'Invalid email format.' });
-        }
-      
-        if (!contactNo || contactNo.length < 7 || contactNo.length > 15) {
-          return res.status(400).json({ message: 'Invalid contact number format. It should be 7 to 15 digits long.' });
-        }
-      
-        if (!password) {
-          return res.status(400).json({ message: 'Password is required.' });
-        }
-      
-        const transaction = await sequelize.transaction();
-      
-        try {
-          const userExists = await User.findOne({ where: { email }, transaction });
-          if (userExists) {
-            return res.status(409).json({ message: 'User with this email already exists.' });
-          }
-      
-          const salt = await bcrypt.genSalt(10);
-          const hashedPassword = await bcrypt.hash(password, salt);
-      
-          const newUser = {
             firstName,
             lastName,
-            dateOfBirth: dob,
             email,
-            password: hashedPassword,
-            role: 'User',
+            password,
             contactNo,
-            address,
+            address = null,
             city,
-            profileImage: imageUrl, 
-            status: true,
-            isVerified: false,
-          };
-      
-          const createdUser = await User.create(newUser, { transaction });
-      
-          const otp = generateOTP();
-          await User.update({ otp }, { where: { id: createdUser.id }, transaction });
-      
-          const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'Verify your email',
-            text: `Your OTP is: ${otp}`,
-          };
-      
-          await sendMail(mailOptions);
-      
-          await transaction.commit();
-      
-          res.status(201).json({
-            status: true,
-            message: 'User registered successfully',
-            createdUser: {
-              id: createdUser.id,
-              name: `${createdUser.firstName} ${createdUser.lastName}`,
-              email: createdUser.email,
-              contactNo: createdUser.contactNo,
-              address: createdUser.address,
-              city: createdUser.city,
-              profileImage: createdUser.profileImage,
-              role: createdUser.role,
-            },
-            otp,
-          });
-        } catch (error) {
-          console.error('Error registering user:', error);
-          await transaction.rollback();
-          res.status(500).json({ status: false, error: 'Internal Server Error', error: error.message });
+            dob,
+        } = req.body;
+
+        console.log(req.body);
+
+        const imageUrl = (req.file && req.file.filename) ? `/image/${req.file.filename}` : null;
+
+        const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+        if (!email || !emailRegex.test(email)) {
+            return res.status(400).json({ message: 'Invalid email format.' });
         }
-      },
-      
+
+        if (!contactNo || contactNo.length < 7 || contactNo.length > 15) {
+            return res.status(400).json({ message: 'Invalid contact number format. It should be 7 to 15 digits long.' });
+        }
+
+        if (!password) {
+            return res.status(400).json({ message: 'Password is required.' });
+        }
+
+        const transaction = await sequelize.transaction();
+
+        try {
+            const userExists = await User.findOne({ where: { email }, transaction });
+            if (userExists) {
+                return res.status(409).json({ message: 'User with this email already exists.' });
+            }
+
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+
+            const newUser = {
+                firstName,
+                lastName,
+                dateOfBirth: dob,
+                email,
+                password: hashedPassword,
+                role: 'User',
+                contactNo,
+                address,
+                city,
+                profileImage: imageUrl,
+                status: true,
+                isVerified: false,
+            };
+
+            const createdUser = await User.create(newUser, { transaction });
+
+            const otp = generateOTP();
+            await User.update({ otp }, { where: { id: createdUser.id }, transaction });
+
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: email,
+                subject: 'Verify your email',
+                text: `Your OTP is: ${otp}`,
+            };
+
+            await sendMail(mailOptions);
+
+            await transaction.commit();
+
+            res.status(201).json({
+                status: true,
+                message: 'User registered successfully',
+                createdUser: {
+                    id: createdUser.id,
+                    name: `${createdUser.firstName} ${createdUser.lastName}`,
+                    email: createdUser.email,
+                    contactNo: createdUser.contactNo,
+                    address: createdUser.address,
+                    city: createdUser.city,
+                    profileImage: createdUser.profileImage,
+                    role: createdUser.role,
+                },
+                otp,
+            });
+        } catch (error) {
+            console.error('Error registering user:', error);
+            await transaction.rollback();
+            res.status(500).json({ status: false, error: 'Internal Server Error', error: error.message });
+        }
+    },
     loginUser: async (req, res) => {
         try {
             const { email, password } = req.body;
