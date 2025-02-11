@@ -63,9 +63,24 @@ const Products = sequelize.define('products', {
         defaultValue: false
     },
     dimension: {
-        type: DataTypes.STRING,
+        type: DataTypes.JSONB,
         allowNull: true
-    }
+    },
+    currency: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: 'PKR',
+    },
+    totalProducts: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+    },
+    remainingProduct: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+    },
 }, {
     tableName: 'products',
     timestamps: true,

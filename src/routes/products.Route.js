@@ -2,7 +2,7 @@ const productController = require('../controllers/products.Controller');
 const prodcustRoute = require('express').Router();
 const { authenticate, authorize } = require('../middleware/auth');
 const upload = require('../middleware/multer');
-
+prodcustRoute.put('/update-carousel', productController.updateCarouselProduct);
 /**
  * @swagger
  * /product:
@@ -874,5 +874,7 @@ prodcustRoute.patch('/status', productController.patchProductStatus);
 prodcustRoute.delete('/remove/:productId/:discountTierId', productController.deleteDiscountTiers);
 prodcustRoute.get('/dicounted-products/:productId', productController.getDiscount);
 prodcustRoute.get('/featured-products', productController.getFeacturedProducts);
+prodcustRoute.post('/update-stock', authenticate, authorize('admin'), productController.updateStock);
+prodcustRoute.get('/carousel-products', productController.getCarouselProducts);
 
 module.exports = prodcustRoute;

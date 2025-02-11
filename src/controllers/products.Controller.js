@@ -1,6 +1,6 @@
 const Products = require('../models/product.Model');
 const Category = require('../models/category.Model');
-const { Op } = require('sequelize');
+const { Op, where } = require('sequelize');
 const Review = require('../models/review.Model');
 const sequelize = require('../config/database');
 const discountedProducts = require('../models/discountedProducts.Model');
@@ -268,9 +268,9 @@ const productController = {
                 weight,
                 options,
                 colors,
-                dimension
+                dimensions,
+                currency
             } = req.body;
-
             if (!name || !price || !categoryId || !description) {
                 return res.status(400).json({
                     error: 'Name, price, category, and description are required'
@@ -287,7 +287,8 @@ const productController = {
                 status: status === 'true',
                 weight: weight || null,
                 options: Array.isArray(options) ? options : [],
-                dimension: dimension || null
+                dimension: dimensions || null,
+                currency
             });
 
             if (req.files && Array.isArray(colors)) {
@@ -295,10 +296,10 @@ const productController = {
                     const colorFiles = req.files[`colors[${index}][images]`] || [];
 
                     if (colorFiles.length === 0) {
-                        return;
+                        return null;
                     }
 
-                    const imageUrls = colorFiles.map(file => `/images/${file.filename}`);
+                    const imageUrls = colorFiles.map((file) => `/images/${file.filename}`);
 
                     return ProductColors.create({
                         productId: product.id,
@@ -311,20 +312,21 @@ const productController = {
             }
 
             const completeProduct = await Products.findByPk(product.id, {
-                include: [{
-                    model: ProductColors,
-                    as: 'colors'
-                }]
+                include: [
+                    {
+                        model: ProductColors,
+                        as: 'colors'
+                    }
+                ]
             });
 
-            res.status(201).json({
+            return res.status(201).json({
                 message: 'Product created successfully',
                 product: completeProduct
             });
-
         } catch (error) {
             console.error('Error creating product:', error);
-            res.status(500).json({
+            return res.status(500).json({
                 error: 'Failed to create product',
                 details: error.message
             });
@@ -397,6 +399,7 @@ const productController = {
 
                 const overlappingTier = await discountedProducts.findAll({
                     where: {
+                        productId,
                         [Op.or]: [
                             { startRange: { [Op.between]: [startRange, endRange] } },
                             { endRange: { [Op.between]: [startRange, endRange] } },
@@ -623,6 +626,89 @@ const productController = {
             });
         } catch (error) {
             res.status(500).json({ error: error.message });
+        }
+    },
+    updateStock: async (req, res) => {
+        try {
+            const { productId, stock } = req.body;
+            const product = await Products.findByPk(productId);
+            if (!product) {
+                return res.status(404).json({ error: 'Product not found' });
+            }
+            await Products.update(
+                { totalProducts: stock, remainingProduct: stock },
+                { where: { id: productId } }
+            );
+            return res.status(200).json({ message: 'Product quantity updated successfully' });
+        } catch (error) {
+            console.error("Error while updating product quantity:", error);
+            return res.status(500).json({ error: error.message });
+        }
+    },
+    getCarouselProducts: async (req, res) => {
+        try {
+            const carouselProducts = await Products.findAll({
+                where: { homeScreen: true },
+                include: [
+                    {
+                        model: Category,
+                        attributes: ['id', 'name'],
+                    },
+                    {
+                        model: ProductColors,
+                        as: 'colors',
+                        attributes: ['id', 'color', 'image'],
+                    },
+                    {
+                        model: ProductsDeliveryCharge,
+                        as: 'deliveryCharges',
+                        attributes: ['id', 'sourceCityId', 'destinationCityId', 'deliveryCharge'],
+                        include: [
+                            {
+                                model: cities,
+                                as: 'sourceCity',
+                                attributes: ['id', 'name'],
+                            },
+                            {
+                                model: cities,
+                                as: 'destinationCity',
+                                attributes: ['id', 'name'],
+                            },
+                        ],
+                    }
+                ],
+            })
+
+            return res.status(200).json({
+                status: true,
+                message: 'Carousel products fetched successfully',
+                data: carouselProducts,
+            });
+        } catch (error) {
+            console.error("Error while fetching carousel products:", error);
+            return res.status(500).json({ error: error.message });
+        }
+    },
+    updateCarouselProduct: async (req, res) => {
+        try {
+            const { currentProductId, newProductId, homePage } = req.body;
+            console.log(req.body)
+            const currentProduct = await Products.findByPk(currentProductId);
+            if (!currentProduct) {
+                return res.status(404).json({ error: 'Current product not found' });
+            }
+
+            const newProduct = await Products.findByPk(newProductId);
+            if (!newProduct) {
+                return res.status(404).json({ error: 'New product not found' });
+            }
+
+            await currentProduct.update({ homeScreen: false });
+            await newProduct.update({ homeScreen: true });
+
+            return res.status(200).json({ message: 'Carousel updated successfully' });
+        } catch (error) {
+            return res.status(500).json({ error: 'Internal server error' });
         }
     }
 }
