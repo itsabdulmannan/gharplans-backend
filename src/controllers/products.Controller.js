@@ -283,7 +283,7 @@ const productController = {
                 categoryId,
                 description,
                 shortDescription: shortDescription || '',
-                addiotionalInformation: additionalInformation || '',
+                additionalInformation: additionalInformation || '',
                 status: status === 'true',
                 weight: weight || null,
                 options: Array.isArray(options) ? options : [],

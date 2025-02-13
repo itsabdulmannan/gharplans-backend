@@ -26,7 +26,12 @@ const ProductColors = sequelize.define('product_colors', {
         get() {
             const rawValue = this.getDataValue('image');
             const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-            return `${baseUrl}${rawValue}`;
+
+            if (!rawValue) return [];
+
+            const images = typeof rawValue === 'string' ? rawValue.split(',') : rawValue;
+
+            return images.map(img => `${baseUrl}${img.trim()}`);
         },
     }
 }, {

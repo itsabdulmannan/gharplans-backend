@@ -35,7 +35,7 @@ const Products = sequelize.define('products', {
         type: DataTypes.TEXT,
         allowNull: true
     },
-    addiotionalInformation: {
+    additionalInformation: {
         type: DataTypes.TEXT,
         allowNull: true
     },
@@ -63,7 +63,7 @@ const Products = sequelize.define('products', {
         defaultValue: false
     },
     dimension: {
-        type: DataTypes.JSONB,
+        type: DataTypes.STRING,
         allowNull: true
     },
     currency: {
