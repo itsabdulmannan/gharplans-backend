@@ -81,6 +81,10 @@ const Products = sequelize.define('products', {
         allowNull: false,
         defaultValue: 0
     },
+    unit: {
+        type: DataTypes.STRING,
+        allowNull: true
+    }
 }, {
     tableName: 'products',
     timestamps: true,

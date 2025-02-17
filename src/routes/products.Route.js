@@ -281,16 +281,22 @@ prodcustRoute.get('/', productController.getProducts);
  *                   example: "Internal Server Error"
  */
 
-prodcustRoute.post('/',
-    authenticate,
-    authorize('admin'),
-    upload.fields([
-        { name: 'images', maxCount: 5 },
-        { name: 'colors[0][images]', maxCount: 5 },
-        { name: 'colors[1][images]', maxCount: 5 },
-    ]),
-    productController.createProduct
+const colorFields = Array.from({ length: 6 }, (_, index) => ({
+  name: `colors[${index}][images]`,
+  maxCount: 5
+}));
+
+prodcustRoute.post(
+  '/',
+  authenticate,
+  authorize('admin'),
+  upload.fields([
+    { name: 'images', maxCount: 5 },
+    ...colorFields
+  ]),
+  productController.createProduct
 );
+
 
 /**
  * @swagger
@@ -876,5 +882,8 @@ prodcustRoute.get('/dicounted-products/:productId', productController.getDiscoun
 prodcustRoute.get('/featured-products', productController.getFeacturedProducts);
 prodcustRoute.post('/update-stock', authenticate, authorize('admin'), productController.updateStock);
 prodcustRoute.get('/carousel-products', productController.getCarouselProducts);
+prodcustRoute.get('/product-relation/:id', productController.getSimilarProductRelation);
+prodcustRoute.delete('/remove-similar-product/:id', productController.removeSimilarProduct);
+prodcustRoute.get('/unlinked-feature-products/:id', productController.getAllUnLinkedProducts);
 
 module.exports = prodcustRoute;

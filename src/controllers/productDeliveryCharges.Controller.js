@@ -7,6 +7,7 @@ const productDeliveryChargesController = {
     addProductDeliveryCharges: async (req, res) => {
         try {
             const { productId, sourceCityId, destinationCityId, price } = req.body;
+            console.log(req.body);
             const checkProduct = await product.findByPk(productId);
             if (!checkProduct) {
                 return res.status(404).json({ message: `Product with id ${productId} not found.` });

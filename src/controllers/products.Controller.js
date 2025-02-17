@@ -1,6 +1,6 @@
 const Products = require('../models/product.Model');
 const Category = require('../models/category.Model');
-const { Op, where } = require('sequelize');
+const { Op, where, Sequelize } = require('sequelize');
 const Review = require('../models/review.Model');
 const sequelize = require('../config/database');
 const discountedProducts = require('../models/discountedProducts.Model');
@@ -112,11 +112,11 @@ const productController = {
                     } else {
                         for (let tier of discountTiers) {
                             const { startRange, endRange, discount } = tier;
-                            const discountedPrice = productPrice * (1 - discount / 100);
+                            // const discountedPrice = productPrice * (1 - discount / 100);
 
                             result.discountTiers.push({
                                 range: `${startRange}-${endRange}`,
-                                discountedPrice: discountedPrice.toFixed(2),
+                                discountedPrice: discount,
                             });
                         }
                     }
@@ -216,11 +216,11 @@ const productController = {
                     } else {
                         for (let tier of discountTiers) {
                             const { startRange, endRange, discount } = tier;
-                            const discountedPrice = productPrice * (1 - discount / 100);
+                            // const discountedPrice = productPrice * (1 - discount / 100);
 
                             productResult.discountTiers.push({
                                 range: `${startRange}-${endRange}`,
-                                discountedPrice: discountedPrice.toFixed(2),
+                                discountedPrice: discount,
                             });
                         }
                     }
@@ -269,14 +269,15 @@ const productController = {
                 options,
                 colors,
                 dimensions,
-                currency
+                currency,
+                weightUnit
             } = req.body;
             if (!name || !price || !categoryId || !description) {
                 return res.status(400).json({
                     error: 'Name, price, category, and description are required'
                 });
             }
-
+            console.log(weightUnit);
             const product = await Products.create({
                 name,
                 price: parseFloat(price),
@@ -288,7 +289,8 @@ const productController = {
                 weight: weight || null,
                 options: Array.isArray(options) ? options : [],
                 dimension: dimensions || null,
-                currency
+                currency,
+                unit: weightUnit
             });
 
             if (req.files && Array.isArray(colors)) {
@@ -493,17 +495,17 @@ const productController = {
     },
     addSimilarProducts: async (req, res) => {
         try {
-            const { productId, similarProducts } = req.body;
+            const { productId, featuredIds } = req.body;
 
             const product = await Products.findByPk(productId);
-
+            console.log(productId, featuredIds, req.body);
             if (!product) {
                 return res.status(404).json({ error: 'Product not found' });
             }
 
             const createdSimilarProducts = [];
 
-            for (const similarProductId of similarProducts) {
+            for (const similarProductId of featuredIds) {
                 const similarProduct = await Products.findByPk(similarProductId);
 
                 if (!similarProduct) {
@@ -512,7 +514,7 @@ const productController = {
                     });
                 }
 
-                const createdEntry = await similerProductModel.create({
+                const createdEntry = await similarProductModel.create({
                     productId,
                     similarProductId,
                 });
@@ -557,7 +559,7 @@ const productController = {
             });
 
             const host = req.protocol + '://' + req.get('host');
-            const response = similarProducts.map(item => {
+            const response = similarProducts.map((item) => {
                 const productDetails = item.similarProductDetails;
                 const colors = productDetails?.colors || [];
 
@@ -568,15 +570,43 @@ const productController = {
                     image: productDetails?.image
                         ? `${host}/${productDetails.image.replace(/^\/|\/$/g, '')}`
                         : null,
-                    colors: colors.map(colorItem => ({
-                        color: colorItem?.color || null,
-                        image: colorItem?.image
-                            ? [`${host}/${colorItem.image.replace(/^\/|\/$/g, '')}`]
-                            : [],
-                    })),
+                    colors: colors.map((colorItem) => {
+                        if (!colorItem.image) {
+                            return {
+                                color: colorItem.color || null,
+                                image: []
+                            };
+                        }
+
+                        if (typeof colorItem.image === 'string') {
+                            return {
+                                color: colorItem.color || null,
+                                image: [
+                                    `${host}/${colorItem.image.replace(/^\/|\/$/g, '')}`
+                                ]
+                            };
+                        }
+
+                        if (Array.isArray(colorItem.image)) {
+                            const mappedImages = colorItem.image
+                                .filter(img => typeof img === 'string')
+                                .map(img => `${host}/${img.replace(/^\/|\/$/g, '')}`);
+
+                            return {
+                                color: colorItem.color || null,
+                                image: mappedImages
+                            };
+                        }
+
+                        return {
+                            color: colorItem.color || null,
+                            image: []
+                        };
+                    }),
                     productId: item.productId,
                 };
             });
+
 
             return res.status(200).json({
                 status: true,
@@ -708,6 +738,81 @@ const productController = {
 
             return res.status(200).json({ message: 'Carousel updated successfully' });
         } catch (error) {
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+    },
+    getSimilarProductRelation: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const similarProducts = await similarProductModel.findAll({
+                where: { productId: id },
+                include: [
+                    {
+                        model: Products,
+                        as: 'similarProductDetails',
+                        attributes: ['id', 'name', 'price', 'image'],
+                        include: {
+                            model: ProductColors,
+                            as: 'colors',
+                            attributes: ['id', 'color', 'image'],
+                        },
+                    },
+                ],
+            })
+            return res.status(200).json({
+                status: true,
+                message: 'Similar products fetched successfully',
+                data: similarProducts,
+            });
+        } catch (error) {
+            return res.status(500).json({ error: 'Internal server error', error: error.message });
+        }
+    },
+    removeSimilarProduct: async (req, res) => {
+        try {
+            const { id } = req.params;
+            console.log(id)
+            const similarProduct = await similarProductModel.findByPk(id);
+            if (!similarProduct) {
+                return res.status(404).json({ error: 'Similar product not found' });
+            }
+            await similarProduct.destroy();
+            return res.status(200).json({ message: 'Similar product removed successfully' });
+        } catch (error) {
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+    },
+    getAllUnLinkedProducts: async (req, res) => {
+        try {
+            const { id } = req.params;  // Extract productId from URL parameters
+            console.log(id, "id");
+
+            // Step 1: Get the IDs of products that are linked to the given productId
+            const linkedProducts = await similarProductModel.findAll({
+                where: { productId: id },  // Get all linked products based on the productId
+                attributes: ['similarProductId'], // Only retrieve the similarProductId
+            });
+
+            // Step 2: Extract the linked product IDs into an array
+            const linkedProductIds = linkedProducts.map(fp => fp.similarProductId);
+
+            // Step 3: Query for products that are NOT linked to the given productId
+            const unLinkedProducts = await Products.findAll({
+                where: {
+                    id: {
+                        [Sequelize.Op.notIn]: linkedProductIds,  // Exclude the linked product IDs
+                    }
+                }
+            });
+
+            // Step 4: Return the unlinked products as a response
+            return res.status(200).json({
+                status: true,
+                message: 'Unlinked products fetched successfully',
+                data: unLinkedProducts,
+            });
+        } catch (error) {
+            console.error(error);
             return res.status(500).json({ error: 'Internal server error' });
         }
     }
