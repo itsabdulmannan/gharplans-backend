@@ -131,7 +131,7 @@ const orderController = {
                         }
                     });
                 } else {
-                    res.status(404).json({ status: false, message: "No orders found." });
+                    res.status(200).json({ status: false, message: "No orders found." });
                 }
             }
         } catch (error) {
