@@ -558,7 +558,6 @@ const productController = {
                 raw: false,
             });
 
-            const host = req.protocol + '://' + req.get('host');
             const response = similarProducts.map((item) => {
                 const productDetails = item.similarProductDetails;
                 const colors = productDetails?.colors || [];
@@ -567,46 +566,14 @@ const productController = {
                     similarProductId: productDetails?.id || null,
                     name: productDetails?.name || null,
                     price: productDetails?.price || null,
-                    image: productDetails?.image
-                        ? `${host}/${productDetails.image.replace(/^\/|\/$/g, '')}`
-                        : null,
-                    colors: colors.map((colorItem) => {
-                        if (!colorItem.image) {
-                            return {
-                                color: colorItem.color || null,
-                                image: []
-                            };
-                        }
-
-                        if (typeof colorItem.image === 'string') {
-                            return {
-                                color: colorItem.color || null,
-                                image: [
-                                    `${host}/${colorItem.image.replace(/^\/|\/$/g, '')}`
-                                ]
-                            };
-                        }
-
-                        if (Array.isArray(colorItem.image)) {
-                            const mappedImages = colorItem.image
-                                .filter(img => typeof img === 'string')
-                                .map(img => `${host}/${img.replace(/^\/|\/$/g, '')}`);
-
-                            return {
-                                color: colorItem.color || null,
-                                image: mappedImages
-                            };
-                        }
-
-                        return {
-                            color: colorItem.color || null,
-                            image: []
-                        };
-                    }),
+                    image: productDetails?.image || null,
+                    colors: colors.map((colorItem) => ({
+                        color: colorItem.color || null,
+                        image: colorItem.image || []
+                    })),
                     productId: item.productId,
                 };
             });
-
 
             return res.status(200).json({
                 status: true,
@@ -784,28 +751,23 @@ const productController = {
     },
     getAllUnLinkedProducts: async (req, res) => {
         try {
-            const { id } = req.params;  // Extract productId from URL parameters
-            console.log(id, "id");
+            const { id } = req.params;
 
-            // Step 1: Get the IDs of products that are linked to the given productId
             const linkedProducts = await similarProductModel.findAll({
-                where: { productId: id },  // Get all linked products based on the productId
-                attributes: ['similarProductId'], // Only retrieve the similarProductId
+                where: { productId: id },
+                attributes: ['similarProductId'],
             });
 
-            // Step 2: Extract the linked product IDs into an array
             const linkedProductIds = linkedProducts.map(fp => fp.similarProductId);
 
-            // Step 3: Query for products that are NOT linked to the given productId
             const unLinkedProducts = await Products.findAll({
                 where: {
                     id: {
-                        [Sequelize.Op.notIn]: linkedProductIds,  // Exclude the linked product IDs
+                        [Sequelize.Op.notIn]: linkedProductIds,
                     }
                 }
             });
 
-            // Step 4: Return the unlinked products as a response
             return res.status(200).json({
                 status: true,
                 message: 'Unlinked products fetched successfully',
