@@ -100,7 +100,6 @@ const productDeliveryChargesController = {
             console.error("Error updating product delivery charge:", error);
         }
     },
-
     deleteProductDeliveryCharges: async (req, res) => {
         try {
             const { id } = req.params;
