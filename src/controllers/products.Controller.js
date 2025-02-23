@@ -165,6 +165,7 @@ const productController = {
                     }
                 ],
                 distinct: true,
+                order: [['homeScreen', 'DESC']],
                 offset: pageOffset,
                 limit: pageLimit,
             });
@@ -270,14 +271,13 @@ const productController = {
                 colors,
                 dimensions,
                 currency,
-                weightUnit
+                unit
             } = req.body;
             if (!name || !price || !categoryId || !description) {
                 return res.status(400).json({
                     error: 'Name, price, category, and description are required'
                 });
             }
-            console.log(weightUnit);
             const product = await Products.create({
                 name,
                 price: parseFloat(price),
@@ -290,7 +290,7 @@ const productController = {
                 options: Array.isArray(options) ? options : [],
                 dimension: dimensions || null,
                 currency,
-                unit: weightUnit
+                unit
             });
 
             if (req.files && Array.isArray(colors)) {
@@ -337,14 +337,84 @@ const productController = {
     updateProduct: async (req, res) => {
         try {
             const { id } = req.params;
+            const {
+                name,
+                price,
+                categoryId,
+                description,
+                shortDescription,
+                additionalInformation,
+                status,
+                weight,
+                options,
+                colors,
+                dimensions,
+                currency,
+                unit
+            } = req.body;
+            console.log("Id", id, "----------------", "Req Body", req.body)
+            // 1) Find existing product
             const product = await Products.findByPk(id);
             if (!product) {
                 return res.status(404).json({ error: 'Product not found' });
             }
-            await product.update(req.body);
-            res.status(200).json(product);
+
+            // 2) Update main product fields
+            await product.update({
+                name,
+                price: parseFloat(price),
+                categoryId,
+                description,
+                shortDescription: shortDescription || '',
+                additionalInformation: additionalInformation || '',
+                status: status === 'true',
+                weight: weight || null,
+                options: Array.isArray(options) ? options : [],
+                dimension: dimensions || null,
+                currency,
+                unit
+            });
+
+            // 3) If there are color updates, remove old color records and re-create
+            if (req.files && Array.isArray(colors)) {
+                // Remove old color records
+                await ProductColors.destroy({ where: { productId: product.id } });
+
+                // Re-create color records
+                const colorPromises = colors.map(async (color, index) => {
+                    const colorFiles = req.files[`colors[${index}][images]`] || [];
+
+                    if (colorFiles.length === 0) {
+                        // If the user didn't upload new images for this color, you could skip
+                        // or create an entry without images. Adjust to your needs.
+                        return null;
+                    }
+
+                    // Build an array of file paths
+                    const imageUrls = colorFiles.map((file) => `/images/${file.filename}`);
+
+                    return ProductColors.create({
+                        productId: product.id,
+                        color: color.name,
+                        image: imageUrls
+                    });
+                });
+
+                await Promise.all(colorPromises);
+            }
+
+            // 4) Fetch updated product + colors for the response
+            const completeProduct = await Products.findByPk(product.id, {
+                include: [{ model: ProductColors, as: 'colors' }]
+            });
+
+            return res.status(200).json({
+                message: 'Product updated successfully',
+                product: completeProduct
+            });
         } catch (error) {
-            res.status(500).json({ error: error.message });
+            console.error('Error updating product:', error);
+            return res.status(500).json({ error: error.message });
         }
     },
     deleteProduct: async (req, res) => {
@@ -364,20 +434,20 @@ const productController = {
         try {
             const { productId, homePage } = req.body;
 
+            if (typeof productId === "undefined" || typeof homePage === "undefined") {
+                return res.status(400).json({ error: "productId and homePage are required" });
+            }
+
             const product = await Products.findByPk(productId);
             if (!product) {
-                return res.status(404).json({ error: 'Product not found' });
+                return res.status(404).json({ error: "Product not found" });
             }
 
-            if (homePage === 1) {
-                await product.update({ homeScreen: true });
-            } else {
-                await product.update({ homeScreen: false });
-            }
+            await product.update({ homeScreen: homePage === 1 });
 
-            return res.status(200).json({ message: 'Order changed successfully' });
+            return res.status(200).json({ message: "Home screen status updated successfully" });
         } catch (error) {
-            console.error("Error while changing order:", error);
+            console.error("Error while changing home screen status:", error);
             return res.status(500).json({ error: error.message });
         }
     },

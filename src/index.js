@@ -44,7 +44,7 @@ app.use('/utm', require('./routes/utm.Route'));
 app.use('/tac', require('./routes/termsAndCondition.Route'));
 app.use('/pap', require('./routes/privacyAndPolicy.Route'));
 app.use('/frequently', require('./routes/faq.Routes'));
-
+app.use('/banners', require('./routes/banner.Route'));
 
 const PORT = process.env.PORT || 80;
 // Start the server

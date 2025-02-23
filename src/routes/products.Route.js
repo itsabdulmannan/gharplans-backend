@@ -434,7 +434,16 @@ prodcustRoute.post(
  *                   example: "Internal Server Error"
  */
 
-prodcustRoute.put('/:id', authenticate, authorize('admin'), productController.updateProduct);
+prodcustRoute.put(
+  '/:id',
+  authenticate,
+  authorize('admin'),
+  upload.fields([
+    { name: 'images', maxCount: 5 },
+    ...colorFields
+  ]),
+  productController.updateProduct
+);
 
 /**
  * @swagger
